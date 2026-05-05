@@ -1,301 +1,266 @@
 'use client'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { ArrowRight, Shield, CheckCircle2, Clock, Building2 } from 'lucide-react'
-import WavyUnderline from '@/components/ui/WavyUnderline'
+import { ArrowRight, Shield, CheckCircle2, Clock, Star } from 'lucide-react'
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 
-const fadeUp = {
-  hidden: { opacity: 0, y: 20 },
-  visible: (i = 0) => ({
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.4, ease: 'easeOut' as const, delay: i * 0.08 },
-  }),
-}
-
-const miniCards = [
-  {
-    label: 'Basic Health',
-    price: 'AED 750',
-    period: 'from / year',
-    bg: 'var(--medical-50)',
-    color: 'var(--medical-600)',
-    href: '/medical',
-    badge: 'DHA Compliant',
-    illustration: (
-      <svg viewBox="0 0 80 60" width="80" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="40" cy="30" r="28" fill="#A7F3D0" opacity="0.4" />
-        <rect x="30" y="4" width="20" height="52" rx="4" fill="#6EE7B7" />
-        <rect x="4" y="22" width="72" height="20" rx="4" fill="#6EE7B7" />
-        <rect x="36" y="10" width="8" height="40" rx="2" fill="#059669" />
-        <rect x="10" y="28" width="60" height="8" rx="2" fill="#059669" />
-      </svg>
-    ),
-  },
-  {
-    label: 'Enhanced Plan',
-    price: 'AED 2,400',
-    period: 'from / year',
-    bg: 'var(--business-50)',
-    color: 'var(--business-600)',
-    href: '/medical',
-    badge: 'Most Popular',
-    illustration: (
-      <svg viewBox="0 0 80 60" width="80" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="40" cy="30" r="28" fill="#C4B5FD" opacity="0.4" />
-        <path d="M40 8 L50 15 L50 32 C50 40 45 46 40 48 C35 46 30 40 30 32 L30 15 Z" fill="#A78BFA" />
-        <path d="M35 28 L38 32 L45 24" stroke="#6D28D9" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    ),
-  },
-  {
-    label: 'Family Plan',
-    price: 'AED 4,200',
-    period: 'from / year',
-    bg: 'var(--travel-50)',
-    color: 'var(--travel-600)',
-    href: '/medical',
-    badge: 'HAAD Approved',
-    illustration: (
-      <svg viewBox="0 0 80 60" width="80" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="26" cy="20" r="10" fill="#FDE68A" />
-        <circle cx="54" cy="20" r="10" fill="#FDE68A" />
-        <circle cx="40" cy="16" r="8" fill="#FCD34D" />
-        <path d="M10 50 Q10 38 26 38 Q40 38 40 38 Q40 38 54 38 Q70 38 70 50" fill="#FDE68A" />
-      </svg>
-    ),
-  },
-  {
-    label: 'Group / Corporate',
-    price: 'AED 900',
-    period: 'per employee / yr',
-    bg: 'var(--motor-50)',
-    color: 'var(--motor-600)',
-    href: '/business',
-    badge: 'For Employers',
-    illustration: (
-      <svg viewBox="0 0 70 60" width="70" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect x="10" y="20" width="50" height="38" rx="4" fill="#BFDBFE" />
-        <rect x="18" y="4" width="34" height="20" rx="4" fill="#93C5FD" />
-        <rect x="24" y="30" width="10" height="14" rx="2" fill="#1D4ED8" />
-        <rect x="36" y="30" width="10" height="14" rx="2" fill="#1D4ED8" />
-        <rect x="16" y="28" width="38" height="4" rx="1" fill="#1E40AF" />
-      </svg>
-    ),
-  },
+const emirates = [
+  { id: 'dubai',     label: 'Dubai',      flag: '🏙️' },
+  { id: 'abudhabi',  label: 'Abu Dhabi',  flag: '🏛️' },
+  { id: 'sharjah',   label: 'Sharjah',    flag: '🏘️' },
+  { id: 'ajman',     label: 'Ajman',      flag: '🌊' },
+  { id: 'rak',       label: 'RAK',        flag: '⛰️' },
+  { id: 'fujairah',  label: 'Fujairah',   flag: '🌿' },
+  { id: 'uaq',       label: 'UAQ',        flag: '🏝️' },
 ]
 
-const trustPills = [
-  { icon: Shield, text: 'IA Licensed & Regulated' },
-  { icon: CheckCircle2, text: 'DHA & HAAD Compliant' },
-  { icon: Clock, text: 'Certificate in 3 minutes' },
+const stats = [
+  { value: '75,000+', label: 'Insured residents' },
+  { value: '3 min',   label: 'Avg. quote time' },
+  { value: '97%',     label: 'Claims settled' },
+  { value: '14+',     label: 'Insurer partners' },
+]
+
+const badges = [
+  { icon: Shield,        text: 'IA Licensed & Regulated' },
+  { icon: CheckCircle2,  text: 'DHA & HAAD Compliant' },
+  { icon: Clock,         text: 'Certificate in 3 minutes' },
 ]
 
 export default function HeroSection() {
+  const [selectedEmirate, setSelectedEmirate] = useState<string | null>(null)
+  const router = useRouter()
+
+  const handleProceed = () => {
+    if (!selectedEmirate) return
+    router.push(`/quote/health?emirate=${selectedEmirate}`)
+  }
+
   return (
-    <section className="pt-20 pb-12" style={{ backgroundColor: 'var(--page-bg)' }}>
-      <div className="max-w-[1280px] mx-auto px-5 lg:px-20">
-        <div className="grid lg:grid-cols-[55fr_45fr] gap-12 items-center">
-          {/* Left */}
+    <section
+      className="relative overflow-hidden"
+      style={{ background: 'linear-gradient(150deg, var(--navy-950) 0%, var(--navy-900) 50%, #0C2A4A 100%)' }}
+    >
+      {/* Geometric background pattern */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <svg className="absolute top-0 right-0 w-[55%] h-full opacity-[0.04]" viewBox="0 0 600 700" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <polygon points="0,0 600,0 600,700" fill="white" />
+        </svg>
+        <div className="absolute top-20 right-[8%] w-72 h-72 rounded-full opacity-[0.06]" style={{ background: 'radial-gradient(circle, var(--teal-400) 0%, transparent 70%)' }} />
+        <div className="absolute bottom-10 left-[5%] w-48 h-48 rounded-full opacity-[0.05]" style={{ background: 'radial-gradient(circle, var(--gold-400) 0%, transparent 70%)' }} />
+        {/* Grid lines */}
+        <svg className="absolute inset-0 w-full h-full opacity-[0.03]" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
+              <path d="M 60 0 L 0 0 0 60" fill="none" stroke="white" strokeWidth="0.5"/>
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#grid)" />
+        </svg>
+      </div>
+
+      <div className="relative max-w-[1320px] mx-auto px-5 lg:px-8 py-16 lg:py-20">
+        <div className="grid lg:grid-cols-[1fr_440px] gap-12 lg:gap-16 items-center">
+
+          {/* Left: Content */}
           <div>
-            {/* Award badges */}
+            {/* Award tag */}
             <motion.div
-              className="flex flex-wrap gap-2.5 mb-6"
-              initial="hidden"
-              animate="visible"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+              className="inline-flex items-center gap-2 mb-6 px-3.5 py-1.5 rounded-full border"
+              style={{
+                backgroundColor: 'rgba(212,162,75,0.12)',
+                borderColor: 'rgba(212,162,75,0.35)',
+                color: 'var(--gold-400)',
+              }}
             >
-              <motion.span
-                custom={0}
-                variants={fadeUp}
-                className="inline-flex items-center gap-1.5 bg-white border border-[var(--border-default)] text-[var(--text-secondary)] font-sans font-semibold text-xs px-3.5 py-1.5 rounded-full"
-              >
-                <Building2 className="w-3 h-3" style={{ color: 'var(--green-700)' }} />
-                UAE's #1 Health Insurance Platform
-              </motion.span>
-              <motion.span
-                custom={1}
-                variants={fadeUp}
-                className="inline-flex items-center gap-1.5 border font-sans font-semibold text-xs px-3.5 py-1.5 rounded-full"
-                style={{
-                  backgroundColor: 'var(--green-50)',
-                  borderColor: 'var(--green-100)',
-                  color: 'var(--green-700)',
-                }}
-              >
-                IA Regulated · Licensed Insurer
-              </motion.span>
+              <Star className="w-3 h-3 fill-current" />
+              <span className="font-sans font-semibold text-[12px] tracking-wide">
+                UAE&apos;s #1 Health Insurance Comparison Platform
+              </span>
             </motion.div>
 
-            {/* H1 */}
-            <motion.div custom={2} variants={fadeUp} initial="hidden" animate="visible" className="mb-5">
-              <h1
-                className="font-display font-extrabold leading-[1.08] tracking-tight"
-                style={{ fontSize: 'clamp(38px, 5vw, 56px)', color: 'var(--text-primary)' }}
-              >
-                UAE&apos;s smartest
-                <br />
-                health insurer by your{' '}
-                <span className="relative inline-block">
-                  <em
-                    className="not-italic font-serif italic"
-                    style={{ fontSize: 'clamp(42px, 5.5vw, 62px)' }}
-                  >
-                    side
-                  </em>
-                  <span className="absolute -bottom-3 left-0 w-full">
-                    <WavyUnderline width={100} />
-                  </span>
-                </span>
-              </h1>
-            </motion.div>
-
-            {/* Subtext */}
-            <motion.p
-              custom={3}
-              variants={fadeUp}
-              initial="hidden"
-              animate="visible"
-              className="font-sans text-[17px] leading-relaxed mb-8 max-w-[480px]"
-              style={{ color: 'var(--text-muted)' }}
+            {/* Headline */}
+            <motion.h1
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45, delay: 0.06 }}
+              className="font-display font-extrabold leading-[1.07] tracking-tight text-white mb-5"
+              style={{ fontSize: 'clamp(36px, 4.8vw, 58px)' }}
             >
-              Instant quotes on DHA-compliant health plans.
+              Health insurance
               <br />
-              Trusted by 75,000+ residents across the UAE.
+              built for the{' '}
+              <span
+                className="relative"
+                style={{ color: 'var(--teal-400)' }}
+              >
+                UAE
+                <svg className="absolute -bottom-2 left-0 w-full" viewBox="0 0 100 8" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+                  <path d="M2 6 Q25 2 50 5 Q75 8 98 4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" fill="none" opacity="0.7"/>
+                </svg>
+              </span>
+            </motion.h1>
+
+            {/* Sub-headline */}
+            <motion.p
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.12 }}
+              className="font-sans text-[16px] leading-relaxed mb-8 max-w-[460px]"
+              style={{ color: 'var(--navy-200)' }}
+            >
+              Instant DHA-compliant quotes from 14+ licensed insurers.
+              Coverage for individuals, families, and businesses across all 7 emirates.
             </motion.p>
 
-            {/* CTAs */}
+            {/* Trust badges */}
             <motion.div
-              custom={4}
-              variants={fadeUp}
-              initial="hidden"
-              animate="visible"
-              className="flex flex-wrap gap-3 mb-6"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.18 }}
+              className="flex flex-wrap gap-4 mb-10"
             >
-              <Link
-                href="/quote/medical"
-                className="inline-flex items-center gap-2 h-14 px-8 bg-orange-500 hover:bg-orange-600 text-white rounded-[var(--radius-xl)] font-sans font-semibold text-base transition-all duration-200 hover:-translate-y-px hover:shadow-lg"
-              >
-                Get a free quote <ArrowRight className="w-4 h-4" />
-              </Link>
-              <Link
-                href="/#products"
-                className="inline-flex items-center h-14 px-8 bg-white border-[1.5px] border-[var(--border-medium)] text-[var(--text-secondary)] rounded-[var(--radius-xl)] font-sans font-semibold text-base hover:bg-[var(--surface-raised)] hover:border-[var(--border-strong)] transition-all duration-200"
-              >
-                View all plans
-              </Link>
-            </motion.div>
-
-            {/* Trust pills */}
-            <motion.div
-              custom={5}
-              variants={fadeUp}
-              initial="hidden"
-              animate="visible"
-              className="flex flex-wrap gap-5"
-            >
-              {trustPills.map(({ icon: Icon, text }) => (
-                <div key={text} className="flex items-center gap-1.5">
-                  <div
-                    className="w-4 h-4 rounded-full flex items-center justify-center shrink-0"
-                    style={{ backgroundColor: 'var(--green-50)' }}
-                  >
-                    <svg
-                      width="10"
-                      height="10"
-                      viewBox="0 0 10 10"
-                      fill="none"
-                    >
-                      <path
-                        d="M2 5 L4 7 L8 3"
-                        stroke="var(--green-700)"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </div>
-                  <span className="font-sans text-[13px]" style={{ color: 'var(--text-muted)' }}>
+              {badges.map(({ icon: Icon, text }) => (
+                <div key={text} className="flex items-center gap-2">
+                  <Icon className="w-4 h-4 shrink-0" style={{ color: 'var(--teal-400)' }} />
+                  <span className="font-sans text-[13px]" style={{ color: 'var(--navy-200)' }}>
                     {text}
                   </span>
                 </div>
               ))}
             </motion.div>
-          </div>
 
-          {/* Right: mini bento */}
-          <div className="hidden lg:block">
-            <div className="grid grid-cols-2 gap-3 max-w-[420px]">
-              {miniCards.map((card, i) => (
-                <motion.div
-                  key={card.label}
-                  custom={i}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 + i * 0.08, duration: 0.4 }}
-                  whileHover={{ y: -4, boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}
-                >
-                  <Link
-                    href={card.href}
-                    className="block relative overflow-visible bg-white rounded-4xl border border-[var(--border-default)] p-5 cursor-pointer"
-                    style={{ backgroundColor: card.bg }}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <span
-                        className="font-sans font-semibold text-xs uppercase tracking-wider"
-                        style={{ color: card.color }}
-                      >
-                        {card.label}
-                      </span>
-                      <div
-                        className="w-7 h-7 rounded-full flex items-center justify-center border"
-                        style={{ borderColor: card.color }}
-                      >
-                        <ArrowRight className="w-3.5 h-3.5" style={{ color: card.color }} />
-                      </div>
-                    </div>
-                    <p
-                      className="font-display font-bold text-2xl leading-none"
-                      style={{ color: card.color }}
-                    >
-                      {card.price}
-                    </p>
-                    <p className="font-sans text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-                      {card.period}
-                    </p>
-                    {card.badge && (
-                      <span
-                        className="inline-block mt-2 font-sans font-semibold text-[10px] px-2 py-0.5 rounded-full"
-                        style={{ backgroundColor: `${card.color}18`, color: card.color }}
-                      >
-                        {card.badge}
-                      </span>
-                    )}
-                    <div className="absolute bottom-0 right-0 pointer-events-none opacity-80">
-                      {card.illustration}
-                    </div>
-                  </Link>
-                </motion.div>
-              ))}
-            </div>
-
-            {/* Live policy badge */}
+            {/* Stats row */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.8 }}
-              className="mt-4 mx-auto w-fit bg-white rounded-full shadow-md px-4 py-2.5 flex items-center gap-2.5"
+              transition={{ duration: 0.4, delay: 0.24 }}
+              className="grid grid-cols-2 sm:grid-cols-4 gap-4"
             >
-              <div
-                className="w-2 h-2 rounded-full animate-pulse shrink-0"
-                style={{ backgroundColor: 'var(--green-500)' }}
-              />
-              <span className="font-sans text-[13px]" style={{ color: 'var(--text-secondary)' }}>
-                Policy issued · Health Plan · Dubai · 2 min ago
-              </span>
+              {stats.map(({ value, label }) => (
+                <div key={label} className="text-center sm:text-left">
+                  <div className="font-display font-extrabold text-2xl text-white leading-none mb-1">
+                    {value}
+                  </div>
+                  <div className="font-sans text-[12px]" style={{ color: 'var(--navy-400)' }}>
+                    {label}
+                  </div>
+                </div>
+              ))}
             </motion.div>
           </div>
+
+          {/* Right: Quote form card */}
+          <motion.div
+            initial={{ opacity: 0, x: 24 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.15 }}
+            className="bg-white rounded-2xl shadow-2xl overflow-hidden"
+          >
+            {/* Card header */}
+            <div className="px-6 pt-6 pb-4 border-b border-[var(--border-subtle)]">
+              <h2 className="font-display font-bold text-[18px] text-[var(--navy-900)] mb-0.5">
+                Get your free quote
+              </h2>
+              <p className="font-sans text-[13px] text-[var(--text-muted)]">
+                Select your emirate of visa issuance to start
+              </p>
+            </div>
+
+            <div className="p-5">
+              {/* Step indicator */}
+              <div className="flex items-center gap-2 mb-4">
+                <div
+                  className="w-5 h-5 rounded-full flex items-center justify-center font-sans font-bold text-[10px] text-white shrink-0"
+                  style={{ backgroundColor: 'var(--teal-600)' }}
+                >
+                  1
+                </div>
+                <span className="font-sans font-semibold text-[12px] text-[var(--text-secondary)]">
+                  Step 1 — Select Emirate of Visa Issuance
+                </span>
+              </div>
+
+              {/* Emirates grid */}
+              <div className="grid grid-cols-2 gap-2 mb-5">
+                {emirates.map(({ id, label, flag }) => (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => setSelectedEmirate(id)}
+                    className={cn(
+                      'flex items-center gap-2.5 px-3.5 py-3 rounded-xl border-2 text-left transition-all duration-150',
+                      selectedEmirate === id
+                        ? 'border-[var(--teal-600)] bg-[var(--teal-50)]'
+                        : 'border-[var(--border-default)] hover:border-[var(--border-medium)] bg-white hover:bg-[var(--surface-raised)]'
+                    )}
+                  >
+                    <span className="text-lg leading-none">{flag}</span>
+                    <div>
+                      <span
+                        className={cn(
+                          'font-sans font-semibold text-[13px] block leading-none mb-0.5',
+                          selectedEmirate === id ? 'text-[var(--teal-700)]' : 'text-[var(--text-primary)]'
+                        )}
+                      >
+                        {label}
+                      </span>
+                      {id === 'dubai' && (
+                        <span className="font-sans text-[10px]" style={{ color: 'var(--teal-600)' }}>
+                          Mandatory DHA
+                        </span>
+                      )}
+                    </div>
+                    {selectedEmirate === id && (
+                      <CheckCircle2 className="w-4 h-4 ml-auto shrink-0" style={{ color: 'var(--teal-600)' }} />
+                    )}
+                  </button>
+                ))}
+              </div>
+
+              {/* CTA */}
+              <button
+                type="button"
+                onClick={handleProceed}
+                disabled={!selectedEmirate}
+                className={cn(
+                  'w-full h-12 rounded-xl font-sans font-bold text-[14px] flex items-center justify-center gap-2 transition-all duration-200',
+                  selectedEmirate
+                    ? 'text-white hover:opacity-90 hover:shadow-lg hover:-translate-y-0.5'
+                    : 'text-[var(--text-subtle)] cursor-not-allowed'
+                )}
+                style={{
+                  background: selectedEmirate
+                    ? 'linear-gradient(135deg, var(--navy-800) 0%, var(--teal-600) 100%)'
+                    : 'var(--border-default)',
+                }}
+              >
+                Continue
+                <ArrowRight className="w-4 h-4" />
+              </button>
+
+              {/* Footer note */}
+              <p className="mt-3.5 text-center font-sans text-[11px] text-[var(--text-subtle)]">
+                No spam · No commitment · Quotes in under 3 minutes
+              </p>
+            </div>
+          </motion.div>
         </div>
       </div>
+
+      {/* Bottom fade into page */}
+      <div
+        className="h-10"
+        style={{ background: 'linear-gradient(to bottom, transparent, var(--page-bg))' }}
+      />
     </section>
   )
+}
+
+function cn(...classes: (string | boolean | undefined | null)[]): string {
+  return classes.filter(Boolean).join(' ')
 }

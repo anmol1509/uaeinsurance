@@ -1,41 +1,60 @@
 :root {
   /* ── Page & Surface ────────────────────────── */
-  --page-bg:          #F5F6F4;
+  --page-bg:          #F0F4F8;
   --surface:          #FFFFFF;
-  --surface-raised:   #F9FAFB;
-  --surface-sunken:   #F3F4F6;
+  --surface-raised:   #F8FAFC;
+  --surface-sunken:   #EEF2F7;
 
-  /* ── Brand Green ───────────────────────────── */
-  --green-900:        #052E16;
-  --green-800:        #063D24;
-  --green-700:        #0A5C36;
-  --green-600:        #0D7A47;
-  --green-500:        #1A8A52;
-  --green-400:        #34C47C;
-  --green-100:        #DCFCE7;
-  --green-50:         #E6F4ED;
+  /* ── Brand Navy (Primary) ──────────────────── */
+  --navy-950:         #060F1E;
+  --navy-900:         #0B1F3A;
+  --navy-800:         #0F2D55;
+  --navy-700:         #133B6E;
+  --navy-600:         #1A4F8A;
+  --navy-500:         #2563A8;
+  --navy-400:         #4A85C8;
+  --navy-200:         #B8CDE6;
+  --navy-100:         #D6E4F4;
+  --navy-50:          #EBF2FA;
 
-  /* ── Accent Orange ─────────────────────────── */
-  --orange-600:       #E55A28;
-  --orange-500:       #FF6B35;
-  --orange-100:       #FFEDD5;
-  --orange-50:        #FFF7F0;
+  /* ── Brand Teal (Secondary) ────────────────── */
+  --teal-700:         #0A7A72;
+  --teal-600:         #0D9488;
+  --teal-500:         #14B8A6;
+  --teal-400:         #2DD4BF;
+  --teal-100:         #CCFBF1;
+  --teal-50:          #F0FDFA;
+
+  /* ── Brand Gold (Accent) ───────────────────── */
+  --gold-700:         #B07D1A;
+  --gold-600:         #D4A24B;
+  --gold-500:         #E8B84B;
+  --gold-400:         #F5CC72;
+  --gold-100:         #FEF3C7;
+  --gold-50:          #FFFBEB;
+
+  /* ── Backward-compat Green aliases ────────── */
+  --green-900:        #0B1F3A;
+  --green-800:        #0F2D55;
+  --green-700:        #0D9488;
+  --green-600:        #14B8A6;
+  --green-500:        #2DD4BF;
+  --green-400:        #5EEAD4;
+  --green-100:        #CCFBF1;
+  --green-50:         #F0FDFA;
 
   /* ── Typography ────────────────────────────── */
-  --text-primary:     #111827;
-  --text-secondary:   #374151;
-  --text-muted:       #6B7280;
-  --text-subtle:      #9CA3AF;
+  --text-primary:     #0B1F3A;
+  --text-secondary:   #1E3A5F;
+  --text-muted:       #5A7A9B;
+  --text-subtle:      #8BA5C1;
   --text-inverse:     #FFFFFF;
 
   /* ── Borders ───────────────────────────────── */
-  --border-subtle:    #F3F4F6;
-  --border-default:   #E5E7EB;
-  --border-medium:    #D1D5DB;
-  --border-strong:    #9CA3AF;
-
-  /* ── Stat Purple ───────────────────────────── */
-  --stat-purple:      #7C3AED;
+  --border-subtle:    #EBF2FA;
+  --border-default:   #D6E4F4;
+  --border-medium:    #B8CDE6;
+  --border-strong:    #6A9CC6;
 
   /* ── Product Colours ───────────────────────── */
   --motor-700:        #1E40AF;
@@ -43,25 +62,25 @@
   --motor-100:        #DBEAFE;
   --motor-50:         #EFF6FF;
 
-  --medical-700:      #047857;
-  --medical-600:      #059669;
-  --medical-100:      #D1FAE5;
-  --medical-50:       #ECFDF5;
+  --medical-700:      #0A7A72;
+  --medical-600:      #0D9488;
+  --medical-100:      #CCFBF1;
+  --medical-50:       #F0FDFA;
 
   --travel-700:       #B45309;
   --travel-600:       #D97706;
   --travel-100:       #FDE68A;
   --travel-50:        #FFFBEB;
 
-  --business-700:     #6D28D9;
-  --business-600:     #7C3AED;
-  --business-100:     #EDE9FE;
-  --business-50:      #F5F3FF;
+  --business-700:     #133B6E;
+  --business-600:     #1A4F8A;
+  --business-100:     #D6E4F4;
+  --business-50:      #EBF2FA;
 
   /* ── Dark ──────────────────────────────────── */
-  --dark:             #000000;
-  --dark-surface:     #111827;
-  --dark-muted:       #374151;
+  --dark:             #060F1E;
+  --dark-surface:     #0B1F3A;
+  --dark-muted:       #1E3A5F;
 
   /* ── Feedback ──────────────────────────────── */
   --error:            #EF4444;
@@ -70,20 +89,21 @@
   --warning-bg:       #FFFBEB;
   --success:          #10B981;
   --success-bg:       #ECFDF5;
+  --stat-purple:      #133B6E;
 
   /* ── Radii ─────────────────────────────────── */
-  --radius-sm:        8px;
-  --radius-md:        12px;
-  --radius-lg:        16px;
-  --radius-xl:        20px;
-  --radius-2xl:       24px;
+  --radius-sm:        6px;
+  --radius-md:        10px;
+  --radius-lg:        14px;
+  --radius-xl:        18px;
+  --radius-2xl:       22px;
   --radius-full:      9999px;
 
   /* ── Shadows ───────────────────────────────── */
-  --shadow-sm:        0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
-  --shadow-md:        0 4px 16px rgba(0,0,0,0.08);
-  --shadow-lg:        0 8px 32px rgba(0,0,0,0.10);
-  --shadow-xl:        0 20px 60px rgba(0,0,0,0.12);
+  --shadow-sm:        0 1px 3px rgba(11,31,58,0.08), 0 1px 2px rgba(11,31,58,0.05);
+  --shadow-md:        0 4px 16px rgba(11,31,58,0.10);
+  --shadow-lg:        0 8px 32px rgba(11,31,58,0.12);
+  --shadow-xl:        0 20px 60px rgba(11,31,58,0.16);
 
   /* ── Fonts ─────────────────────────────────── */
   --font-sans:        var(--font-dm), 'DM Sans', system-ui, sans-serif;

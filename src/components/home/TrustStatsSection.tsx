@@ -1,223 +1,151 @@
 'use client'
 import { motion } from 'framer-motion'
-import PhoneFrame from '@/components/ui/PhoneFrame'
 import CountUpNumber from '@/components/ui/CountUpNumber'
+import { Star, Shield, Zap, PhoneCall, Clock } from 'lucide-react'
 
 const stats = [
-  { value: '< 3 mins', label: 'Fastest quote to certificate', isText: true },
-  { value: 99.2, label: 'Claims settled within 5 business days', suffix: '%', isText: false },
-  { value: '24×7', label: 'Multilingual claims support', isText: true },
+  { value: 75000, label: 'Insured Residents', suffix: '+',   format: (n: number) => (n >= 1000 ? `${(n/1000).toFixed(0)}K` : String(n)) },
+  { value: 97,    label: 'Claims Settled',    suffix: '%',   format: (n: number) => n.toFixed(0) },
+  { value: 3,     label: 'Minutes to Quote',  suffix: ' min', format: (n: number) => n.toFixed(0) },
+  { value: 14,    label: 'Insurer Partners',  suffix: '+',   format: (n: number) => n.toFixed(0) },
 ]
-
-function ClaimsPhoneContent() {
-  return (
-    <div className="flex flex-col h-full p-4 bg-white">
-      {/* Mini header */}
-      <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-100">
-        <div className="w-5 h-5 rounded bg-[var(--green-700)] flex items-center justify-center">
-          <span className="text-white text-[8px] font-bold">I</span>
-        </div>
-        <span className="font-sans font-semibold text-[11px] text-gray-700">InsureAE</span>
-      </div>
-
-      {/* Policy card */}
-      <div className="rounded-xl overflow-hidden mb-3 shadow-sm">
-        <div className="bg-[var(--green-700)] px-4 py-3">
-          <p className="text-white font-sans font-semibold text-[11px]">Health Insurance</p>
-          <p className="text-white/70 font-sans text-[10px] mt-0.5">IAE-2025-0087341</p>
-        </div>
-        <div className="bg-white px-4 py-2 border border-t-0 border-gray-100 rounded-b-xl">
-          <p className="font-sans text-[10px] text-gray-500">Enhanced Plan · Dubai</p>
-          <p className="font-sans font-semibold text-[11px] text-gray-800 mt-0.5">
-            Active · Expires Dec 2025
-          </p>
-        </div>
-      </div>
-
-      {/* Spacer */}
-      <div className="flex-1" />
-
-      {/* File claim button */}
-      <button
-        type="button"
-        className="w-full py-3 rounded-xl font-sans font-semibold text-[13px] text-white"
-        style={{ backgroundColor: 'var(--green-700)' }}
-      >
-        File a claim
-      </button>
-    </div>
-  )
-}
 
 const testimonials = [
   {
-    quote:
-      'I recently switched to InsureAE and I\'m thoroughly impressed! The claims process was seamless — my hospital bills were settled directly.',
+    quote: 'Fastest insurance certificate I\'ve ever received. DHA-compliant and in my inbox in under 3 minutes.',
     name: 'Aisha Al Mansouri',
-    product: 'Health Insurance',
+    role: 'Dubai resident',
+    initials: 'AA',
+    rating: 5,
   },
   {
-    quote:
-      'The fastest insurance certificate I have ever gotten. Paid and received my DHA-compliant document in under 3 minutes!',
+    quote: 'Transparent pricing, no hidden fees. InsureAE found me a better plan at AED 400 less per year than my previous insurer.',
     name: 'Priya Nair',
-    product: 'Basic Health Plan',
+    role: 'Abu Dhabi resident',
+    initials: 'PN',
+    rating: 5,
   },
   {
-    quote:
-      'InsureAE has the most transparent pricing in UAE. No hidden fees, just honest health insurance.',
+    quote: 'The claims team resolved my hospital bill in 2 days. Genuinely the best insurance experience I\'ve had in the UAE.',
     name: 'Omar Al Farsi',
-    product: 'Family Health Plan',
+    role: 'Sharjah resident',
+    initials: 'OA',
+    rating: 5,
   },
+]
+
+const trustPoints = [
+  { icon: Shield,    title: 'IA Licensed',         desc: 'Insurance Authority of the UAE' },
+  { icon: Zap,       title: 'DHA Compliant',        desc: 'Dubai Health Authority approved' },
+  { icon: PhoneCall, title: '24/7 Support',         desc: 'Multilingual claims team' },
+  { icon: Clock,     title: '< 3 Min',              desc: 'Quote to certificate' },
 ]
 
 export default function TrustStatsSection() {
   return (
-    <section style={{ backgroundColor: 'var(--surface)' }} className="py-20 px-5 lg:px-20">
-      <div className="max-w-[1280px] mx-auto">
-        {/* Headline */}
-        <motion.h2
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.4 }}
-          className="font-display font-extrabold text-center text-4xl lg:text-[42px] tracking-tight mb-12"
-          style={{ color: 'var(--text-primary)' }}
-        >
-          Your trust isn&apos;t assumed, it&apos;s earned.
-        </motion.h2>
+    <section className="py-20" style={{ backgroundColor: 'var(--page-bg)' }}>
+      <div className="max-w-[1320px] mx-auto px-5 lg:px-8">
 
-        {/* Stats */}
-        <div className="flex flex-col md:flex-row justify-center mb-16 border border-[var(--border-default)] rounded-3xl overflow-hidden bg-white divide-y md:divide-y-0 md:divide-x divide-[var(--border-default)]">
-          {stats.map(({ value, label, suffix, isText }, i) => (
-            <motion.div
-              key={label}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.1 }}
-              className="flex-1 py-10 px-16 text-center"
+        {/* Trust points row */}
+        <div
+          className="grid grid-cols-2 md:grid-cols-4 gap-px mb-16 rounded-2xl overflow-hidden border border-[var(--border-default)]"
+        >
+          {trustPoints.map(({ icon: Icon, title, desc }) => (
+            <div
+              key={title}
+              className="bg-white px-6 py-6 flex items-center gap-4"
             >
-              <p
-                className="font-display font-bold leading-none"
-                style={{ fontSize: '68px', color: 'var(--stat-purple)' }}
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                style={{ backgroundColor: 'var(--navy-50)' }}
               >
-                {isText ? (
-                  value
-                ) : (
-                  <CountUpNumber
-                    target={Number(value)}
-                    suffix={suffix}
-                    format={(n) => n.toFixed(1)}
-                  />
-                )}
-              </p>
-              <p className="font-sans text-base mt-2" style={{ color: 'var(--text-muted)' }}>
-                {label}
-              </p>
-            </motion.div>
+                <Icon className="w-5 h-5" style={{ color: 'var(--navy-700)' }} />
+              </div>
+              <div>
+                <div className="font-display font-bold text-[15px] text-[var(--navy-900)]">{title}</div>
+                <div className="font-sans text-[12px] text-[var(--text-muted)]">{desc}</div>
+              </div>
+            </div>
           ))}
         </div>
 
-        {/* Two cards */}
-        <div className="grid md:grid-cols-2 gap-5">
-          {/* Claims card */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.4 }}
-            className="bg-white rounded-4xl border border-[var(--border-default)] p-9 overflow-hidden"
-          >
-            <h3
-              className="font-display font-bold text-2xl mb-6"
-              style={{ color: 'var(--text-primary)' }}
-            >
-              Claims shouldn&apos;t be hard.
-            </h3>
-            <div className="flex justify-center mb-6">
-              <PhoneFrame>
-                <ClaimsPhoneContent />
-              </PhoneFrame>
-            </div>
-            <button
-              type="button"
-              className="w-full h-11 rounded-[var(--radius-xl)] font-sans font-medium text-sm border-[1.5px] border-[var(--border-medium)] hover:bg-[var(--surface-raised)] transition-colors"
-              style={{ color: 'var(--text-secondary)' }}
-            >
-              File a claim →
-            </button>
-          </motion.div>
+        {/* Stats + Testimonials two-column */}
+        <div className="grid lg:grid-cols-[1fr_1.1fr] gap-6">
 
-          {/* Testimonial card */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.4 }}
-            className="bg-white rounded-4xl border border-[var(--border-default)] p-9"
+          {/* Left: Stats */}
+          <div
+            className="rounded-2xl p-8 flex flex-col justify-between"
+            style={{ background: 'linear-gradient(145deg, var(--navy-900) 0%, var(--navy-950) 100%)' }}
           >
-            <h3
-              className="font-display font-bold text-2xl mb-6"
-              style={{ color: 'var(--text-primary)' }}
-            >
-              Promises made. Promises kept.
-            </h3>
-            <div className="flex justify-center gap-1 mb-4">
-              {[...Array(5)].map((_, i) => (
-                <span key={i} className="text-[22px]" style={{ color: '#FBBF24' }}>
-                  ★
-                </span>
+            <div>
+              <div
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full font-sans font-bold text-[11px] mb-4"
+                style={{ backgroundColor: 'rgba(212,162,75,0.2)', color: 'var(--gold-400)' }}
+              >
+                By the numbers
+              </div>
+              <h2 className="font-display font-extrabold text-white mb-2" style={{ fontSize: 'clamp(22px, 2.8vw, 32px)', lineHeight: 1.15 }}>
+                Trusted by 75,000+ UAE residents
+              </h2>
+              <p className="font-sans text-[14px] mb-8" style={{ color: 'var(--navy-200)' }}>
+                InsureAE is the fastest-growing health insurance platform in the UAE.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              {stats.map(({ value, label, suffix, format }, i) => (
+                <motion.div
+                  key={label}
+                  initial={{ opacity: 0, y: 16 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.08 }}
+                  className="rounded-xl p-4"
+                  style={{ backgroundColor: 'rgba(255,255,255,0.07)' }}
+                >
+                  <div className="font-display font-extrabold text-white leading-none mb-1" style={{ fontSize: '28px' }}>
+                    <CountUpNumber target={value} suffix={suffix} format={format} />
+                  </div>
+                  <div className="font-sans text-[12px]" style={{ color: 'var(--navy-400)' }}>{label}</div>
+                </motion.div>
               ))}
             </div>
-            <p
-              className="font-sans text-[15px] italic text-center max-w-[340px] mx-auto leading-relaxed"
-              style={{ color: 'var(--text-secondary)' }}
-            >
-              &ldquo;{testimonials[0].quote}&rdquo;
-            </p>
+          </div>
 
-            <div className="flex items-center justify-center gap-3 mt-5">
-              <div
-                className="w-11 h-11 rounded-full flex items-center justify-center font-sans font-semibold text-base"
-                style={{ backgroundColor: 'var(--surface-sunken)', color: 'var(--text-primary)' }}
+          {/* Right: Testimonials */}
+          <div className="space-y-4">
+            {testimonials.map((t, i) => (
+              <motion.div
+                key={t.name}
+                initial={{ opacity: 0, x: 20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+                className="bg-white rounded-2xl p-5 border border-[var(--border-default)]"
               >
-                AM
-              </div>
-              <div>
-                <p className="font-display font-semibold text-[15px]" style={{ color: 'var(--text-primary)' }}>
-                  {testimonials[0].name}
+                <div className="flex items-center gap-1 mb-3">
+                  {[...Array(t.rating)].map((_, j) => (
+                    <Star key={j} className="w-3.5 h-3.5 fill-current" style={{ color: '#FBBF24' }} />
+                  ))}
+                </div>
+                <p className="font-sans text-[13.5px] leading-relaxed text-[var(--text-secondary)] mb-4">
+                  &ldquo;{t.quote}&rdquo;
                 </p>
-                <p className="font-sans text-[13px]" style={{ color: 'var(--text-muted)' }}>
-                  InsureAE customer
-                </p>
-              </div>
-            </div>
-
-            <div className="flex justify-center gap-2.5 mt-5">
-              <button
-                type="button"
-                className="w-10 h-10 rounded-full border border-[var(--border-default)] flex items-center justify-center hover:bg-[var(--surface-raised)] transition-colors"
-              >
-                ←
-              </button>
-              <button
-                type="button"
-                className="w-10 h-10 rounded-full border border-[var(--border-default)] flex items-center justify-center hover:bg-[var(--surface-raised)] transition-colors"
-              >
-                →
-              </button>
-            </div>
-
-            <div className="flex justify-center mt-4">
-              <button
-                type="button"
-                className="font-sans font-medium text-sm px-5 py-2.5 rounded-full text-white"
-                style={{ backgroundColor: 'var(--text-primary)' }}
-              >
-                View more reviews
-              </button>
-            </div>
-          </motion.div>
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-9 h-9 rounded-full flex items-center justify-center font-display font-bold text-[12px] text-white shrink-0"
+                    style={{ background: 'linear-gradient(135deg, var(--navy-700) 0%, var(--teal-600) 100%)' }}
+                  >
+                    {t.initials}
+                  </div>
+                  <div>
+                    <div className="font-sans font-semibold text-[13px] text-[var(--text-primary)]">{t.name}</div>
+                    <div className="font-sans text-[11px] text-[var(--text-muted)]">{t.role}</div>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </div>
     </section>

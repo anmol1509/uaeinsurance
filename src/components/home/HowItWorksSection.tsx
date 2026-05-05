@@ -1,206 +1,125 @@
 'use client'
-import { useRef } from 'react'
-import { motion, useInView } from 'framer-motion'
-import PhoneFrame from '@/components/ui/PhoneFrame'
-import StepCircle from '@/components/ui/StepCircle'
+import { motion } from 'framer-motion'
+import Link from 'next/link'
+import { MapPin, FileText, CreditCard, Download, ArrowRight } from 'lucide-react'
 
 const steps = [
   {
-    number: 1,
-    label: 'Step 1',
-    title: 'Choose your health plan type',
-    desc: 'Select Individual, Family, or Group/Corporate health insurance.',
+    number: '01',
+    icon: MapPin,
+    title: 'Select your emirate',
+    desc: 'Choose the emirate that issued your UAE visa. Dubai follows DHA rules; other emirates follow different IA guidelines.',
+    color: '#0D9488',
+    bg: '#F0FDFA',
   },
   {
-    number: 2,
-    label: 'Step 2',
+    number: '02',
+    icon: FileText,
     title: 'Tell us about yourself',
-    desc: 'Fill in your Emirates ID details and visa category — takes under 2 minutes.',
+    desc: 'Your Emirates ID, salary band, and member type. Takes under 2 minutes — no medical questions for basic DHA plans.',
+    color: '#1A4F8A',
+    bg: '#EBF2FA',
   },
   {
-    number: 3,
-    label: 'Step 3',
-    title: 'Get your instant quote',
-    desc: 'We calculate your DHA-compliant premium in real-time. No waiting. No broker.',
+    number: '03',
+    icon: CreditCard,
+    title: 'Compare & choose your plan',
+    desc: 'We instantly compare 14+ licensed insurers. Filter by price, network, or benefit level. No broker commission inflating costs.',
+    color: '#D4A24B',
+    bg: '#FFFBEB',
   },
   {
-    number: 4,
-    label: 'Step 4',
-    title: 'Pay and get covered instantly',
-    desc: 'DHA/HAAD-compliant certificate issued the moment payment clears.',
+    number: '04',
+    icon: Download,
+    title: 'Pay & receive your certificate',
+    desc: 'DHA/HAAD-compliant insurance certificate delivered to your email the moment payment clears. Under 3 minutes total.',
+    color: '#7C3AED',
+    bg: '#F5F3FF',
   },
 ]
 
-function QuoteMockUI() {
-  return (
-    <div className="flex flex-col h-full p-3 bg-white text-[var(--text-primary)]">
-      {/* Mini navbar */}
-      <div className="flex items-center gap-1.5 pb-3 border-b border-gray-100 mb-3">
-        <div className="w-4 h-4 rounded bg-[var(--green-700)] flex items-center justify-center">
-          <span className="text-white text-[7px] font-bold">I</span>
-        </div>
-        <span className="font-sans font-semibold text-[10px] text-gray-700">InsureAE</span>
-      </div>
-
-      {/* Progress dots */}
-      <div className="flex items-center justify-center gap-2 mb-4">
-        {[1, 2, 3].map((dot) => (
-          <div
-            key={dot}
-            className={`w-2 h-2 rounded-full transition-all ${dot === 2 ? 'w-6' : ''}`}
-            style={{
-              backgroundColor: dot === 2 ? 'var(--green-700)' : 'var(--border-default)',
-            }}
-          />
-        ))}
-      </div>
-
-      {/* Question card */}
-      <div
-        className="rounded-2xl p-4 mx-1"
-        style={{ backgroundColor: 'var(--surface-raised)' }}
-      >
-        <p
-          className="font-sans font-semibold text-[9px] uppercase tracking-wider mb-2"
-          style={{ color: 'var(--green-700)' }}
-        >
-          Your Plan
-        </p>
-        <p className="font-sans font-semibold text-[12px] text-gray-800 mb-3 leading-snug">
-          Which health plan suits you?
-        </p>
-        {/* Options */}
-        <div
-          className="rounded-xl px-3 py-2.5 mb-2 flex items-center gap-2"
-          style={{ backgroundColor: 'var(--green-700)' }}
-        >
-          <div className="w-3.5 h-3.5 rounded-full bg-white flex items-center justify-center">
-            <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'var(--green-700)' }} />
-          </div>
-          <span className="font-sans font-medium text-[11px] text-white">Enhanced Plan</span>
-        </div>
-        <div className="rounded-xl px-3 py-2.5 flex items-center gap-2 border border-gray-200 bg-white">
-          <div className="w-3.5 h-3.5 rounded-full border border-gray-300" />
-          <span className="font-sans text-[11px] text-gray-600">Basic DHA Plan</span>
-        </div>
-      </div>
-
-      <div className="flex-1" />
-
-      {/* Next button */}
-      <button
-        type="button"
-        className="w-full py-2.5 rounded-xl font-sans font-semibold text-[12px] text-white mt-3"
-        style={{ backgroundColor: 'var(--green-700)' }}
-      >
-        Next step →
-      </button>
-    </div>
-  )
-}
-
 export default function HowItWorksSection() {
-  const sectionRef = useRef<HTMLDivElement>(null)
-  const isInView = useInView(sectionRef, { once: true, margin: '-100px' })
-
   return (
-    <section style={{ backgroundColor: 'var(--page-bg)' }} className="py-20 px-5 lg:px-20">
-      <div className="max-w-[1280px] mx-auto">
+    <section
+      className="py-20"
+      style={{ backgroundColor: 'var(--surface)' }}
+    >
+      <div className="max-w-[1320px] mx-auto px-5 lg:px-8">
+
         {/* Header */}
-        <div className="text-center mb-16">
-          <p
-            className="font-sans font-bold text-[11px] uppercase tracking-[0.12em] mb-3"
-            style={{ color: 'var(--green-700)' }}
+        <div className="text-center mb-14">
+          <div
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full font-sans font-semibold text-[12px] mb-4"
+            style={{ backgroundColor: 'var(--teal-50)', color: 'var(--teal-700)' }}
           >
-            How InsureAE Works
-          </p>
+            How it works
+          </div>
           <h2
-            className="font-display font-extrabold text-4xl lg:text-[40px] tracking-tight mb-3"
-            style={{ color: 'var(--text-primary)' }}
+            className="font-display font-extrabold leading-tight text-[var(--navy-900)] mb-3"
+            style={{ fontSize: 'clamp(26px, 3.2vw, 38px)' }}
           >
-            Get a personalised health quote in about 3 minutes
+            Health insurance in under 3 minutes
           </h2>
-          <p
-            className="font-sans text-[17px] max-w-[520px] mx-auto leading-relaxed"
-            style={{ color: 'var(--text-muted)' }}
-          >
-            We find the best DHA-compliant cover at the best price. No jargon. No pressure.
+          <p className="font-sans text-[15px] text-[var(--text-muted)] max-w-lg mx-auto">
+            No paperwork. No broker meetings. Fully online — from quote to DHA-compliant certificate.
           </p>
         </div>
 
-        {/* Content */}
-        <div className="grid lg:grid-cols-2 gap-20 items-center">
-          {/* Left: Steps */}
-          <div ref={sectionRef} className="relative">
-            {/* Track line */}
-            <div
-              className="absolute left-4 top-4 bottom-4 w-0.5"
-              style={{ backgroundColor: 'var(--border-default)' }}
+        {/* Steps grid */}
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
+          {steps.map((step, i) => (
+            <motion.div
+              key={step.number}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-40px' }}
+              transition={{ delay: i * 0.08, duration: 0.4 }}
+              className="relative bg-white rounded-2xl p-6 border border-[var(--border-default)] hover:shadow-lg transition-shadow"
             >
-              <motion.div
-                className="absolute top-0 left-0 w-full"
-                style={{ backgroundColor: 'var(--green-700)' }}
-                initial={{ height: '0%' }}
-                animate={isInView ? { height: '100%' } : { height: '0%' }}
-                transition={{ duration: 1.5, ease: 'easeOut', delay: 0.3 }}
-              />
-            </div>
+              {/* Connector line (desktop) */}
+              {i < steps.length - 1 && (
+                <div
+                  className="hidden lg:block absolute top-10 left-full w-4 h-0.5 z-10"
+                  style={{ backgroundColor: 'var(--border-medium)' }}
+                />
+              )}
 
-            {/* Steps */}
-            <div className="flex flex-col gap-10">
-              {steps.map((step, i) => (
-                <motion.div
-                  key={step.number}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={isInView ? { opacity: 1, x: 0 } : {}}
-                  transition={{ delay: 0.2 + i * 0.15 }}
-                  className="flex gap-5"
+              {/* Step number */}
+              <div className="flex items-center justify-between mb-4">
+                <div
+                  className="w-11 h-11 rounded-xl flex items-center justify-center"
+                  style={{ backgroundColor: step.bg }}
                 >
-                  <StepCircle
-                    state={i === 0 ? 'completed' : i === 1 ? 'active' : 'upcoming'}
-                    number={step.number}
-                  />
-                  <div className="pt-0.5">
-                    <p
-                      className="font-sans font-semibold text-[12px] uppercase tracking-[0.06em] mb-1"
-                      style={{ color: 'var(--green-700)' }}
-                    >
-                      {step.label}
-                    </p>
-                    <h3
-                      className="font-display font-bold text-[22px] mb-2"
-                      style={{ color: 'var(--text-primary)' }}
-                    >
-                      {step.title}
-                    </h3>
-                    <p
-                      className="font-sans text-sm leading-relaxed max-w-[340px]"
-                      style={{ color: 'var(--text-muted)' }}
-                    >
-                      {step.desc}
-                    </p>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </div>
+                  <step.icon className="w-5 h-5" style={{ color: step.color }} />
+                </div>
+                <span
+                  className="font-display font-extrabold text-[28px] leading-none"
+                  style={{ color: step.bg === '#F0FDFA' ? '#B2F0E8' : step.bg === '#EBF2FA' ? '#C8DAEA' : step.bg === '#FFFBEB' ? '#FDE68A' : '#DDD6FE' }}
+                >
+                  {step.number}
+                </span>
+              </div>
 
-          {/* Right: Phone mockup */}
-          <div className="flex justify-center">
-            <PhoneFrame>
-              <QuoteMockUI />
-            </PhoneFrame>
-          </div>
+              <h3 className="font-display font-bold text-[15px] text-[var(--navy-900)] mb-2 leading-snug">
+                {step.title}
+              </h3>
+              <p className="font-sans text-[13px] text-[var(--text-muted)] leading-relaxed">
+                {step.desc}
+              </p>
+            </motion.div>
+          ))}
         </div>
 
-        {/* Bottom CTA */}
-        <div className="text-center mt-16">
-          <a
-            href="/quote/medical"
-            className="inline-flex items-center h-[54px] px-9 bg-orange-500 hover:bg-orange-600 text-white rounded-full font-sans font-semibold text-base transition-all duration-200 hover:-translate-y-px hover:shadow-lg"
+        {/* CTA */}
+        <div className="text-center">
+          <Link
+            href="/quote/health"
+            className="inline-flex items-center gap-2.5 h-12 px-8 rounded-xl font-sans font-bold text-[14px] text-white transition-all hover:opacity-90 hover:shadow-lg hover:-translate-y-0.5"
+            style={{ background: 'linear-gradient(135deg, var(--navy-800) 0%, var(--teal-600) 100%)' }}
           >
-            Get Your Free Health Quote →
-          </a>
+            Start your free quote
+            <ArrowRight className="w-4 h-4" />
+          </Link>
         </div>
       </div>
     </section>

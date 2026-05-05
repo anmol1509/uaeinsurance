@@ -1,195 +1,130 @@
 'use client'
 import { motion } from 'framer-motion'
-import WavyUnderline from '@/components/ui/WavyUnderline'
+import { Star, Quote } from 'lucide-react'
 
 const testimonials = [
   {
-    quote:
-      'InsureAE made buying health cover effortless. My DHA-compliant certificate arrived before I finished my coffee.',
-    name: 'Fatima Al Zaabi',
-    product: 'Individual Health Insurance',
-    bg: 'var(--orange-500)',
-    textColor: 'white',
-    nameColor: 'white',
-    productBadgeBg: 'rgba(255,255,255,0.2)',
-    productBadgeText: 'white',
-    large: true,
+    quote: 'Got my DHA-compliant certificate in under 3 minutes. My previous insurer took 3 days for the same thing.',
+    name: 'Aisha Al Mansouri',
+    role: 'Marketing Manager, Dubai',
+    initials: 'AA',
+    plan: 'Enhanced Health Plan',
+    color: '#0D9488',
+    rating: 5,
   },
   {
-    quote:
-      'From quote to certificate in under 5 minutes. Absolutely outstanding. Best insurance platform in Dubai.',
-    name: 'Rajesh Menon',
-    product: 'Enhanced Health Plan',
-    bg: 'var(--green-700)',
-    textColor: 'rgba(255,255,255,0.9)',
-    nameColor: 'white',
-    productBadgeBg: 'rgba(255,255,255,0.2)',
-    productBadgeText: 'white',
-    large: false,
+    quote: 'InsureAE saved me AED 1,200 on my annual health premium compared to renewing directly with my old insurer. Identical coverage.',
+    name: 'Priya Nair',
+    role: 'Software Engineer, Abu Dhabi',
+    initials: 'PN',
+    plan: 'Individual Health Plan',
+    color: '#1A4F8A',
+    rating: 5,
   },
   {
-    quote:
-      'Set up health insurance for all 45 of my employees in one afternoon. Group plans are seamless.',
-    name: 'Mohammed Al Rashidi',
-    product: 'Group Health Insurance',
-    bg: 'var(--medical-50)',
-    textColor: 'var(--text-secondary)',
-    nameColor: 'var(--text-primary)',
-    productBadgeBg: 'var(--medical-100)',
-    productBadgeText: 'var(--medical-700)',
-    large: false,
+    quote: 'We insure 45 employees through InsureAE. The group dashboard makes adding new joiners effortless.',
+    name: 'Khalid Al Rashidi',
+    role: 'HR Director, Sharjah',
+    initials: 'KA',
+    plan: 'Group Health Plan',
+    color: '#D4A24B',
+    rating: 5,
   },
   {
-    quote:
-      'My whole family is covered on one plan. HAAD-approved and genuinely affordable.',
-    name: 'Sarah Khalid',
-    product: 'Family Health Plan',
-    bg: 'white',
-    textColor: 'var(--text-secondary)',
-    nameColor: 'var(--text-primary)',
-    productBadgeBg: 'var(--travel-50)',
-    productBadgeText: 'var(--travel-700)',
-    large: false,
+    quote: 'My hospital bill was settled directly with AXA Gulf. I didn\'t pay a dirham out of pocket. Real claims support.',
+    name: 'Maria Santos',
+    role: 'Teacher, Dubai',
+    initials: 'MS',
+    plan: 'Basic DHA Plan',
+    color: '#7C3AED',
+    rating: 5,
   },
   {
-    quote:
-      'I found the exact health cover I needed at a price that made sense for my visa category.',
-    name: 'Priya Nambiar',
-    product: 'Basic Health Plan',
-    bg: 'var(--business-50)',
-    textColor: 'var(--text-secondary)',
-    nameColor: 'var(--text-primary)',
-    productBadgeBg: 'var(--business-100)',
-    productBadgeText: 'var(--business-700)',
-    large: false,
-    bigQuote: true,
+    quote: 'The multilingual support team helped me file my claim in Hindi. The entire process was seamless.',
+    name: 'Rajesh Kumar',
+    role: 'Accountant, Ajman',
+    initials: 'RK',
+    plan: 'Enhanced Health Plan',
+    color: '#0A7A72',
+    rating: 5,
+  },
+  {
+    quote: 'Transparent pricing, clear plan comparisons, and instant policy documents. This is what insurance should be.',
+    name: 'Omar Al Farsi',
+    role: 'Business Owner, RAK',
+    initials: 'OA',
+    plan: 'Family Health Plan',
+    color: '#B45309',
+    rating: 5,
   },
 ]
 
 export default function TestimonialsSection() {
-  const [first, ...rest] = testimonials
-
   return (
-    <section style={{ backgroundColor: 'var(--page-bg)' }} className="py-20 px-5 lg:px-20">
-      <div className="max-w-[1280px] mx-auto">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="text-center mb-16"
-        >
-          <h2
-            className="font-display font-extrabold text-5xl lg:text-[48px] tracking-tight"
-            style={{ color: 'var(--text-primary)' }}
-          >
-            <em
-              className="not-italic font-serif italic relative"
-              style={{ color: 'var(--orange-500)' }}
-            >
-              Real
-              <span className="absolute -bottom-3 left-0 w-full">
-                <WavyUnderline color="var(--orange-500)" width={80} />
-              </span>
-            </em>{' '}
-            customers, real stories.
-          </h2>
-          <p
-            className="font-sans text-[17px] max-w-[540px] mx-auto mt-5"
-            style={{ color: 'var(--text-muted)' }}
-          >
-            Join 75,000+ UAE residents who trust InsureAE for fast, fair, and
-            DHA-compliant health cover.
-          </p>
-        </motion.div>
+    <section className="py-20" style={{ backgroundColor: 'var(--surface)' }}>
+      <div className="max-w-[1320px] mx-auto px-5 lg:px-8">
 
-        {/* Masonry grid */}
-        <div className="grid grid-cols-1 md:grid-cols-[2fr_1.5fr_1.5fr] gap-4">
-          {/* Large featured card (spans 2 rows) */}
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0 }}
-            className="md:row-span-2 rounded-4xl p-9 flex flex-col"
-            style={{ backgroundColor: first.bg }}
+        <div className="text-center mb-12">
+          <div
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full font-sans font-semibold text-[12px] mb-4"
+            style={{ backgroundColor: 'var(--gold-50)', color: 'var(--gold-700)' }}
           >
-            <div className="flex-1">
-              <div className="flex gap-0.5 mb-4">
-                {[...Array(5)].map((_, i) => (
-                  <span key={i} style={{ color: 'rgba(255,255,255,0.9)', fontSize: '18px' }}>
-                    ★
-                  </span>
+            Customer stories
+          </div>
+          <h2
+            className="font-display font-extrabold leading-tight text-[var(--navy-900)] mb-3"
+            style={{ fontSize: 'clamp(26px, 3.2vw, 38px)' }}
+          >
+            Real people. Real savings.
+          </h2>
+          <p className="font-sans text-[15px] text-[var(--text-muted)] max-w-lg mx-auto">
+            Over 75,000 UAE residents trust InsureAE for their health insurance needs.
+          </p>
+        </div>
+
+        <div className="columns-1 sm:columns-2 lg:columns-3 gap-4 space-y-4">
+          {testimonials.map((t, i) => (
+            <motion.div
+              key={t.name}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-30px' }}
+              transition={{ delay: i * 0.06, duration: 0.4 }}
+              className="break-inside-avoid bg-white rounded-2xl p-5 border border-[var(--border-default)] hover:shadow-md transition-shadow inline-block w-full"
+            >
+              {/* Rating */}
+              <div className="flex items-center gap-0.5 mb-3">
+                {[...Array(t.rating)].map((_, j) => (
+                  <Star key={j} className="w-3.5 h-3.5 fill-current" style={{ color: '#FBBF24' }} />
                 ))}
               </div>
-              <p
-                className="font-display font-semibold text-[22px] leading-snug"
-                style={{ color: first.textColor }}
-              >
-                &ldquo;{first.quote}&rdquo;
-              </p>
-            </div>
-            <div className="mt-6 pt-6 border-t border-white/20">
-              <p className="font-display font-bold text-[18px]" style={{ color: first.nameColor }}>
-                {first.name}
-              </p>
-              <span
-                className="inline-block mt-1 font-sans text-xs px-2.5 py-1 rounded-full"
-                style={{
-                  backgroundColor: first.productBadgeBg,
-                  color: first.productBadgeText,
-                }}
-              >
-                {first.product}
-              </span>
-            </div>
-          </motion.div>
 
-          {/* Middle and right cards */}
-          {rest.map((t, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: (i + 1) * 0.08 }}
-              className="rounded-4xl p-7 border border-[var(--border-default)] flex flex-col justify-between"
-              style={{
-                backgroundColor: t.bg,
-                border: ['white', 'var(--medical-50)', 'var(--business-50)'].includes(t.bg)
-                  ? '1px solid var(--border-default)'
-                  : 'none',
-              }}
-            >
-              {!t.bigQuote && i < 2 && (
-                <div className="flex gap-0.5 mb-3">
-                  {[...Array(5)].map((_, j) => (
-                    <span
-                      key={j}
-                      style={{
-                        color: t.bg === 'var(--green-700)' ? 'rgba(255,255,255,0.9)' : '#FBBF24',
-                        fontSize: '15px',
-                      }}
-                    >
-                      ★
-                    </span>
-                  ))}
-                </div>
-              )}
-              <p
-                className={`font-sans leading-relaxed ${t.bigQuote ? 'font-display font-bold text-[26px]' : 'text-sm italic'}`}
-                style={{ color: t.textColor }}
-              >
+              {/* Quote icon */}
+              <Quote className="w-5 h-5 mb-2 opacity-20" style={{ color: t.color }} />
+
+              {/* Text */}
+              <p className="font-sans text-[13.5px] leading-relaxed text-[var(--text-secondary)] mb-4">
                 &ldquo;{t.quote}&rdquo;
               </p>
-              <div className="mt-4">
-                <p className="font-display font-semibold text-sm" style={{ color: t.nameColor }}>
-                  {t.name}
-                </p>
-                <p className="font-sans text-xs mt-1" style={{ color: t.textColor, opacity: 0.7 }}>
-                  {!t.bigQuote && 'InsureAE customer'}
-                  {t.bigQuote && t.product}
-                </p>
+
+              {/* Author */}
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-9 h-9 rounded-full flex items-center justify-center font-display font-bold text-[12px] text-white shrink-0"
+                  style={{ backgroundColor: t.color }}
+                >
+                  {t.initials}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-sans font-semibold text-[13px] text-[var(--text-primary)] truncate">{t.name}</div>
+                  <div className="font-sans text-[11px] text-[var(--text-muted)] truncate">{t.role}</div>
+                </div>
+                <span
+                  className="font-sans font-semibold text-[10px] px-2 py-0.5 rounded-full shrink-0"
+                  style={{ backgroundColor: `${t.color}15`, color: t.color }}
+                >
+                  {t.plan}
+                </span>
               </div>
             </motion.div>
           ))}
