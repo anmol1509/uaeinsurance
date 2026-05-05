@@ -3,17 +3,23 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Eye, EyeOff, ArrowRight, Shield } from 'lucide-react'
+import { Eye, EyeOff, ArrowRight, Shield, CheckCircle2, Clock } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import Logo from '@/components/ui/Logo'
+
+const brandPoints = [
+  { icon: Shield,       text: 'IA licensed & regulated insurers only' },
+  { icon: CheckCircle2, text: 'DHA & HAAD compliant certificates' },
+  { icon: Clock,        text: 'Claims tracked in real-time' },
+]
 
 export default function LoginPage() {
   const router = useRouter()
   const { login, isLoading, user } = useAuthStore()
-  const [email, setEmail] = useState('')
+  const [email, setEmail]     = useState('')
   const [password, setPassword] = useState('')
-  const [showPw, setShowPw] = useState(false)
-  const [error, setError] = useState('')
+  const [showPw, setShowPw]   = useState(false)
+  const [error, setError]     = useState('')
 
   useEffect(() => {
     if (user) router.replace(user.role === 'admin' ? '/admin' : '/dashboard')
@@ -24,7 +30,7 @@ export default function LoginPage() {
     setError('')
     const result = await login(email, password)
     if (!result.success) {
-      setError(result.error ?? 'Login failed.')
+      setError(result.error ?? 'Login failed. Please check your credentials.')
     } else {
       const role = useAuthStore.getState().user?.role
       router.push(role === 'admin' ? '/admin' : '/dashboard')
@@ -37,81 +43,108 @@ export default function LoginPage() {
     setError('')
   }
 
+  const inputBase = "w-full h-12 rounded-xl border px-4 font-sans text-[14px] bg-white outline-none transition-all"
+
   return (
     <div className="min-h-screen flex" style={{ backgroundColor: 'var(--page-bg)' }}>
-      {/* Left brand panel — hidden on mobile */}
-      <div className="hidden lg:flex flex-col justify-between w-[420px] shrink-0 p-10" style={{ backgroundColor: 'var(--green-700)' }}>
-        <Logo size={36} variant="white" wordmarkColor="white" />
 
-        <div>
-          <p className="font-display font-extrabold text-[36px] text-white leading-tight tracking-tight mb-4">
+      {/* ── Left brand panel ── */}
+      <div
+        className="hidden lg:flex flex-col justify-between w-[400px] xl:w-[460px] shrink-0 p-10 relative overflow-hidden"
+        style={{ background: 'linear-gradient(160deg, var(--navy-950) 0%, var(--navy-800) 60%, #0B3D6B 100%)' }}
+      >
+        {/* Background circles */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute -top-24 -right-24 w-64 h-64 rounded-full opacity-[0.07]" style={{ background: 'radial-gradient(circle, var(--teal-400), transparent 70%)' }} />
+          <div className="absolute -bottom-16 -left-16 w-52 h-52 rounded-full opacity-[0.05]" style={{ background: 'radial-gradient(circle, var(--gold-400), transparent 70%)' }} />
+        </div>
+
+        {/* Logo */}
+        <Logo size={36} textColor="white" />
+
+        {/* Copy */}
+        <div className="relative">
+          <div
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full font-sans font-semibold text-[11px] mb-5"
+            style={{ backgroundColor: 'rgba(212,162,75,0.2)', color: 'var(--gold-400)' }}
+          >
+            UAE's #1 health insurance platform
+          </div>
+          <h2 className="font-display font-extrabold text-white text-[34px] leading-[1.1] tracking-tight mb-4">
             Your insurance,<br />all in one place.
+          </h2>
+          <p className="font-sans text-[14px] leading-relaxed mb-8" style={{ color: 'var(--navy-200)' }}>
+            View policies, track claims, download DHA-compliant certificates, and renew cover — all without a single phone call.
           </p>
-          <p className="font-sans text-[15px] text-white/70 leading-relaxed mb-8">
-            View policies, track claims, download certificates and renew cover — without a single phone call.
-          </p>
-          <div className="flex flex-col gap-3">
-            {[
-              { icon: '🛡', text: 'IA licensed insurers only' },
-              { icon: '⚡', text: 'Certificate in under 3 minutes' },
-              { icon: '📞', text: '24/7 claims support' },
-            ].map(({ icon, text }) => (
+          <div className="space-y-3.5">
+            {brandPoints.map(({ icon: Icon, text }) => (
               <div key={text} className="flex items-center gap-3">
-                <span className="text-lg">{icon}</span>
-                <span className="font-sans text-[14px] text-white/80">{text}</span>
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: 'rgba(13,148,136,0.25)' }}>
+                  <Icon className="w-4 h-4" style={{ color: 'var(--teal-400)' }} />
+                </div>
+                <span className="font-sans text-[13.5px]" style={{ color: 'var(--navy-200)' }}>{text}</span>
               </div>
             ))}
           </div>
         </div>
 
-        <p className="font-sans text-[12px] text-white/40">
-          © {new Date().getFullYear()} InsureAE UAE Ltd · IA Lic. No. LIC/INS/NIA/2024/0042
+        <p className="relative font-sans text-[11px]" style={{ color: 'var(--navy-500)' }}>
+          © {new Date().getFullYear()} InsureAE Technologies LLC · IA Lic. No. LIC/INS/2024/0042
         </p>
       </div>
 
-      {/* Right form panel */}
-      <div className="flex-1 flex flex-col items-center justify-center px-5 py-10">
+      {/* ── Right form panel ── */}
+      <div className="flex-1 flex flex-col items-center justify-center px-5 py-12">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          className="w-full max-w-[420px]"
+          transition={{ duration: 0.35 }}
+          className="w-full max-w-[400px]"
         >
           {/* Mobile logo */}
           <div className="lg:hidden mb-8">
             <Logo size={32} />
           </div>
 
-          <h1 className="font-display font-extrabold text-[28px] tracking-tight mb-1" style={{ color: 'var(--text-primary)' }}>
+          <h1 className="font-display font-extrabold text-[28px] tracking-tight mb-1" style={{ color: 'var(--navy-900)' }}>
             Welcome back
           </h1>
-          <p className="font-sans text-[15px] mb-8" style={{ color: 'var(--text-muted)' }}>
+          <p className="font-sans text-[14px] mb-7" style={{ color: 'var(--text-muted)' }}>
             Sign in to your InsureAE account
           </p>
 
-          {/* Demo hint */}
-          <div className="mb-6 p-4 rounded-2xl border" style={{ backgroundColor: 'var(--green-50)', borderColor: 'var(--green-100)' }}>
-            <p className="font-sans font-semibold text-[12px] mb-2" style={{ color: 'var(--green-700)' }}>
-              🧪 Demo accounts — click to fill
+          {/* Demo accounts */}
+          <div
+            className="mb-6 p-3.5 rounded-xl border"
+            style={{ backgroundColor: 'var(--navy-50)', borderColor: 'var(--navy-100)' }}
+          >
+            <p className="font-sans font-semibold text-[11.5px] mb-2.5" style={{ color: 'var(--navy-700)' }}>
+              Demo accounts — click to autofill
             </p>
             <div className="flex gap-2">
-              <button type="button" onClick={() => fillDemo('customer')}
-                className="flex-1 text-[12px] font-sans font-medium py-1.5 rounded-lg border transition-colors hover:bg-white"
-                style={{ borderColor: 'var(--green-100)', color: 'var(--green-700)' }}
+              <button
+                type="button"
+                onClick={() => fillDemo('customer')}
+                className="flex-1 py-2 rounded-lg border font-sans font-semibold text-[12px] transition-all hover:bg-white hover:shadow-sm"
+                style={{ borderColor: 'var(--border-medium)', color: 'var(--navy-700)' }}
               >
                 Customer
               </button>
-              <button type="button" onClick={() => fillDemo('admin')}
-                className="flex-1 text-[12px] font-sans font-medium py-1.5 rounded-lg border transition-colors hover:bg-white"
-                style={{ borderColor: 'var(--green-100)', color: 'var(--green-700)' }}
+              <button
+                type="button"
+                onClick={() => fillDemo('admin')}
+                className="flex-1 py-2 rounded-lg border font-sans font-semibold text-[12px] transition-all hover:bg-white hover:shadow-sm"
+                style={{ borderColor: 'var(--border-medium)', color: 'var(--navy-700)' }}
               >
                 Admin
               </button>
             </div>
           </div>
 
-          {/* Google button */}
-          <button type="button"
-            className="w-full h-12 rounded-2xl border-[1.5px] font-sans font-medium text-[14px] flex items-center justify-center gap-3 mb-4 hover:bg-[var(--surface-raised)] transition-colors"
+          {/* Google SSO */}
+          <button
+            type="button"
+            className="w-full h-12 rounded-xl border font-sans font-medium text-[14px] flex items-center justify-center gap-3 mb-4 hover:bg-[var(--surface-raised)] transition-colors"
             style={{ borderColor: 'var(--border-medium)', color: 'var(--text-primary)' }}
           >
             <svg viewBox="0 0 24 24" width="18" height="18">
@@ -123,7 +156,7 @@ export default function LoginPage() {
             Continue with Google
           </button>
 
-          <div className="flex items-center gap-3 mb-4">
+          <div className="flex items-center gap-3 mb-5">
             <div className="flex-1 h-px" style={{ backgroundColor: 'var(--border-subtle)' }} />
             <span className="font-sans text-[12px]" style={{ color: 'var(--text-subtle)' }}>or sign in with email</span>
             <div className="flex-1 h-px" style={{ backgroundColor: 'var(--border-subtle)' }} />
@@ -137,20 +170,20 @@ export default function LoginPage() {
               <input
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={e => setEmail(e.target.value)}
                 required
                 placeholder="you@example.com"
-                className="w-full h-12 rounded-2xl border-[1.5px] px-4 font-sans text-[14px] outline-none transition-all"
+                className={inputBase}
                 style={{ borderColor: 'var(--border-medium)', color: 'var(--text-primary)' }}
-                onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--green-700)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(10,92,54,0.1)' }}
-                onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--border-medium)'; e.currentTarget.style.boxShadow = 'none' }}
+                onFocus={e => { e.currentTarget.style.borderColor = 'var(--teal-600)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(13,148,136,0.12)' }}
+                onBlur={e => { e.currentTarget.style.borderColor = 'var(--border-medium)'; e.currentTarget.style.boxShadow = 'none' }}
               />
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="font-sans font-semibold text-[12px]" style={{ color: 'var(--text-secondary)' }}>Password</label>
-                <Link href="/forgot-password" className="font-sans text-[12px] hover:underline" style={{ color: 'var(--green-700)' }}>
+                <Link href="/forgot-password" className="font-sans text-[12px] hover:underline" style={{ color: 'var(--teal-600)' }}>
                   Forgot password?
                 </Link>
               </div>
@@ -158,16 +191,18 @@ export default function LoginPage() {
                 <input
                   type={showPw ? 'text' : 'password'}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={e => setPassword(e.target.value)}
                   required
                   placeholder="Enter your password"
-                  className="w-full h-12 rounded-2xl border-[1.5px] px-4 pr-12 font-sans text-[14px] outline-none transition-all"
+                  className={`${inputBase} pr-12`}
                   style={{ borderColor: 'var(--border-medium)', color: 'var(--text-primary)' }}
-                  onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--green-700)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(10,92,54,0.1)' }}
-                  onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--border-medium)'; e.currentTarget.style.boxShadow = 'none' }}
+                  onFocus={e => { e.currentTarget.style.borderColor = 'var(--teal-600)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(13,148,136,0.12)' }}
+                  onBlur={e => { e.currentTarget.style.borderColor = 'var(--border-medium)'; e.currentTarget.style.boxShadow = 'none' }}
                 />
-                <button type="button" onClick={() => setShowPw((p) => !p)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+                <button
+                  type="button"
+                  onClick={() => setShowPw(p => !p)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
                 >
                   {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -175,7 +210,9 @@ export default function LoginPage() {
             </div>
 
             {error && (
-              <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
+              <motion.p
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
                 className="font-sans text-[13px] px-4 py-2.5 rounded-xl"
                 style={{ backgroundColor: 'var(--error-bg)', color: 'var(--error)' }}
               >
@@ -186,12 +223,15 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full h-12 rounded-2xl font-sans font-semibold text-[15px] text-white flex items-center justify-center gap-2 transition-opacity disabled:opacity-60 mt-1"
-              style={{ backgroundColor: 'var(--green-700)' }}
+              className="w-full h-12 rounded-xl font-sans font-bold text-[14px] text-white flex items-center justify-center gap-2 transition-all disabled:opacity-60 hover:opacity-90 hover:shadow-lg mt-1"
+              style={{ background: 'linear-gradient(135deg, var(--navy-800) 0%, var(--teal-600) 100%)' }}
             >
               {isLoading ? (
-                <motion.span className="w-5 h-5 rounded-full border-2 border-white/30 border-t-white"
-                  animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }} />
+                <motion.span
+                  className="w-5 h-5 rounded-full border-2 border-white/30 border-t-white"
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
+                />
               ) : (
                 <>Sign in <ArrowRight className="w-4 h-4" /></>
               )}
@@ -200,12 +240,11 @@ export default function LoginPage() {
 
           <p className="font-sans text-[13px] text-center mt-5" style={{ color: 'var(--text-muted)' }}>
             Don&apos;t have an account?{' '}
-            <Link href="/register" className="font-semibold hover:underline" style={{ color: 'var(--green-700)' }}>
+            <Link href="/register" className="font-semibold hover:underline" style={{ color: 'var(--teal-600)' }}>
               Create one free
             </Link>
           </p>
-
-          <div className="mt-4 text-center">
+          <div className="mt-3 text-center">
             <Link href="/" className="font-sans text-[12px] hover:underline" style={{ color: 'var(--text-subtle)' }}>
               ← Continue without account
             </Link>

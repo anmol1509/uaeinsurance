@@ -6,13 +6,13 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 const emirates = [
-  { id: 'dubai',     label: 'Dubai',      flag: '🏙️' },
-  { id: 'abudhabi',  label: 'Abu Dhabi',  flag: '🏛️' },
-  { id: 'sharjah',   label: 'Sharjah',    flag: '🏘️' },
-  { id: 'ajman',     label: 'Ajman',      flag: '🌊' },
-  { id: 'rak',       label: 'RAK',        flag: '⛰️' },
-  { id: 'fujairah',  label: 'Fujairah',   flag: '🌿' },
-  { id: 'uaq',       label: 'UAQ',        flag: '🏝️' },
+  { id: 'dubai',    label: 'Dubai',     abbr: 'DXB', isDubai: true  },
+  { id: 'abudhabi', label: 'Abu Dhabi', abbr: 'AUH', isDubai: false },
+  { id: 'sharjah',  label: 'Sharjah',  abbr: 'SHJ', isDubai: false },
+  { id: 'ajman',    label: 'Ajman',    abbr: 'AJM', isDubai: false },
+  { id: 'rak',      label: 'RAK',      abbr: 'RKT', isDubai: false },
+  { id: 'fujairah', label: 'Fujairah', abbr: 'FJR', isDubai: false },
+  { id: 'uaq',      label: 'UAQ',      abbr: 'UAQ', isDubai: false },
 ]
 
 const stats = [
@@ -187,39 +187,51 @@ export default function HeroSection() {
 
               {/* Emirates grid */}
               <div className="grid grid-cols-2 gap-2 mb-5">
-                {emirates.map(({ id, label, flag }) => (
-                  <button
-                    key={id}
-                    type="button"
-                    onClick={() => setSelectedEmirate(id)}
-                    className={cn(
-                      'flex items-center gap-2.5 px-3.5 py-3 rounded-xl border-2 text-left transition-all duration-150',
-                      selectedEmirate === id
-                        ? 'border-[var(--teal-600)] bg-[var(--teal-50)]'
-                        : 'border-[var(--border-default)] hover:border-[var(--border-medium)] bg-white hover:bg-[var(--surface-raised)]'
-                    )}
-                  >
-                    <span className="text-lg leading-none">{flag}</span>
-                    <div>
-                      <span
-                        className={cn(
-                          'font-sans font-semibold text-[13px] block leading-none mb-0.5',
-                          selectedEmirate === id ? 'text-[var(--teal-700)]' : 'text-[var(--text-primary)]'
-                        )}
-                      >
-                        {label}
-                      </span>
-                      {id === 'dubai' && (
-                        <span className="font-sans text-[10px]" style={{ color: 'var(--teal-600)' }}>
-                          Mandatory DHA
-                        </span>
+                {emirates.map(({ id, label, abbr, isDubai }) => {
+                  const active = selectedEmirate === id
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => setSelectedEmirate(id)}
+                      className={cn(
+                        'flex items-center gap-3 px-3 py-2.5 rounded-xl border-2 text-left transition-all duration-150',
+                        active
+                          ? 'border-[var(--teal-600)] bg-[var(--teal-50)]'
+                          : 'border-[var(--border-default)] bg-white hover:border-[var(--teal-400)] hover:bg-[var(--teal-50)]'
                       )}
-                    </div>
-                    {selectedEmirate === id && (
-                      <CheckCircle2 className="w-4 h-4 ml-auto shrink-0" style={{ color: 'var(--teal-600)' }} />
-                    )}
-                  </button>
-                ))}
+                    >
+                      {/* IATA-style code badge */}
+                      <span
+                        className="w-9 h-9 rounded-lg flex items-center justify-center font-display font-extrabold text-[10px] shrink-0 leading-none"
+                        style={{
+                          backgroundColor: active ? 'var(--teal-600)' : 'var(--navy-50)',
+                          color: active ? '#fff' : 'var(--navy-700)',
+                        }}
+                      >
+                        {abbr}
+                      </span>
+                      <div className="min-w-0">
+                        <span
+                          className={cn(
+                            'font-sans font-semibold text-[13px] block leading-none mb-0.5 truncate',
+                            active ? 'text-[var(--teal-700)]' : 'text-[var(--text-primary)]'
+                          )}
+                        >
+                          {label}
+                        </span>
+                        {isDubai && (
+                          <span className="font-sans text-[10px]" style={{ color: 'var(--teal-600)' }}>
+                            DHA mandatory
+                          </span>
+                        )}
+                      </div>
+                      {active && (
+                        <CheckCircle2 className="w-4 h-4 ml-auto shrink-0" style={{ color: 'var(--teal-600)' }} />
+                      )}
+                    </button>
+                  )
+                })}
               </div>
 
               {/* CTA */}

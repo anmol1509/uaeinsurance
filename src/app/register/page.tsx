@@ -3,20 +3,27 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Eye, EyeOff, ArrowRight, Check } from 'lucide-react'
+import { Eye, EyeOff, ArrowRight, CheckCircle2 } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import Logo from '@/components/ui/Logo'
+
+const perks = [
+  'Compare plans from 14+ licensed insurers',
+  'Digital DHA-compliant certificate on payment',
+  'Track claims &amp; renewals in real-time',
+  'Free — no broker mark-up or hidden fees',
+]
 
 export default function RegisterPage() {
   const router = useRouter()
   const { register, isLoading, user } = useAuthStore()
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
-  const [phone, setPhone] = useState('')
+  const [name, setName]       = useState('')
+  const [email, setEmail]     = useState('')
+  const [phone, setPhone]     = useState('')
   const [password, setPassword] = useState('')
-  const [showPw, setShowPw] = useState(false)
-  const [agreed, setAgreed] = useState(false)
-  const [error, setError] = useState('')
+  const [showPw, setShowPw]   = useState(false)
+  const [agreed, setAgreed]   = useState(false)
+  const [error, setError]     = useState('')
 
   useEffect(() => {
     if (user) router.replace('/dashboard')
@@ -38,62 +45,86 @@ export default function RegisterPage() {
     }
   }
 
-  const inputCls = "w-full h-12 rounded-2xl border-[1.5px] px-4 font-sans text-[14px] outline-none transition-all"
-  const focusStyle = { borderColor: 'var(--green-700)', boxShadow: '0 0 0 3px rgba(10,92,54,0.1)' }
-  const blurStyle = { borderColor: 'var(--border-medium)', boxShadow: 'none' }
+  const inputBase = "w-full h-12 rounded-xl border px-4 font-sans text-[14px] bg-white outline-none transition-all"
+  const onFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    e.currentTarget.style.borderColor = 'var(--teal-600)'
+    e.currentTarget.style.boxShadow = '0 0 0 3px rgba(13,148,136,0.12)'
+  }
+  const onBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    e.currentTarget.style.borderColor = 'var(--border-medium)'
+    e.currentTarget.style.boxShadow = 'none'
+  }
 
   return (
     <div className="min-h-screen flex" style={{ backgroundColor: 'var(--page-bg)' }}>
-      {/* Left panel */}
-      <div className="hidden lg:flex flex-col justify-between w-[420px] shrink-0 p-10" style={{ backgroundColor: 'var(--green-700)' }}>
-        <Logo size={36} variant="white" wordmarkColor="white" />
-        <div>
-          <p className="font-display font-extrabold text-[34px] text-white leading-tight tracking-tight mb-4">
+
+      {/* ── Left brand panel ── */}
+      <div
+        className="hidden lg:flex flex-col justify-between w-[400px] xl:w-[460px] shrink-0 p-10 relative overflow-hidden"
+        style={{ background: 'linear-gradient(160deg, var(--navy-950) 0%, var(--navy-800) 60%, #0B3D6B 100%)' }}
+      >
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute -top-24 -right-24 w-64 h-64 rounded-full opacity-[0.07]" style={{ background: 'radial-gradient(circle, var(--teal-400), transparent 70%)' }} />
+          <div className="absolute bottom-0 left-0 w-52 h-52 rounded-full opacity-[0.05]" style={{ background: 'radial-gradient(circle, var(--gold-400), transparent 70%)' }} />
+        </div>
+
+        <Logo size={36} textColor="white" />
+
+        <div className="relative">
+          <div
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full font-sans font-semibold text-[11px] mb-5"
+            style={{ backgroundColor: 'rgba(212,162,75,0.2)', color: 'var(--gold-400)' }}
+          >
+            Free account · No credit card needed
+          </div>
+          <h2 className="font-display font-extrabold text-white text-[34px] leading-[1.1] tracking-tight mb-4">
             Get covered in<br />under 3 minutes.
-          </p>
-          <p className="font-sans text-[15px] text-white/70 leading-relaxed mb-8">
-            Create your free account to save quotes, track policies, and file claims — all in one secure dashboard.
+          </h2>
+          <p className="font-sans text-[14px] leading-relaxed mb-8" style={{ color: 'var(--navy-200)' }}>
+            Create your free InsureAE account to save quotes, manage policies, and file claims instantly.
           </p>
           <div className="space-y-3">
-            {[
-              'Compare plans from 10+ insurers',
-              'Digital certificate instantly on payment',
-              'Track claims in real-time',
-              'Free — no broker mark-up',
-            ].map((text) => (
+            {perks.map((text) => (
               <div key={text} className="flex items-center gap-3">
-                <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center shrink-0">
-                  <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: 'rgba(13,148,136,0.25)' }}>
+                  <CheckCircle2 className="w-3.5 h-3.5" style={{ color: 'var(--teal-400)' }} />
                 </div>
-                <span className="font-sans text-[14px] text-white/80">{text}</span>
+                <span
+                  className="font-sans text-[13.5px]"
+                  style={{ color: 'var(--navy-200)' }}
+                  dangerouslySetInnerHTML={{ __html: text }}
+                />
               </div>
             ))}
           </div>
         </div>
-        <p className="font-sans text-[12px] text-white/40">
-          © {new Date().getFullYear()} InsureAE UAE Ltd
+
+        <p className="relative font-sans text-[11px]" style={{ color: 'var(--navy-500)' }}>
+          © {new Date().getFullYear()} InsureAE Technologies LLC
         </p>
       </div>
 
-      {/* Right form */}
+      {/* ── Right form ── */}
       <div className="flex-1 flex flex-col items-center justify-center px-5 py-10">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          className="w-full max-w-[420px]"
+          transition={{ duration: 0.35 }}
+          className="w-full max-w-[400px]"
         >
           <div className="lg:hidden mb-8"><Logo size={32} /></div>
 
-          <h1 className="font-display font-extrabold text-[28px] tracking-tight mb-1" style={{ color: 'var(--text-primary)' }}>
+          <h1 className="font-display font-extrabold text-[28px] tracking-tight mb-1" style={{ color: 'var(--navy-900)' }}>
             Create your account
           </h1>
-          <p className="font-sans text-[15px] mb-6" style={{ color: 'var(--text-muted)' }}>
-            Free forever · No credit card required
+          <p className="font-sans text-[14px] mb-6" style={{ color: 'var(--text-muted)' }}>
+            Free forever · No commitment required
           </p>
 
           {/* Google */}
-          <button type="button"
-            className="w-full h-12 rounded-2xl border-[1.5px] font-sans font-medium text-[14px] flex items-center justify-center gap-3 mb-4 hover:bg-[var(--surface-raised)] transition-colors"
+          <button
+            type="button"
+            className="w-full h-12 rounded-xl border font-sans font-medium text-[14px] flex items-center justify-center gap-3 mb-4 hover:bg-[var(--surface-raised)] transition-colors"
             style={{ borderColor: 'var(--border-medium)', color: 'var(--text-primary)' }}
           >
             <svg viewBox="0 0 24 24" width="18" height="18">
@@ -112,89 +143,112 @@ export default function RegisterPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
+            {/* Full name */}
             <div>
               <label className="block font-sans font-semibold text-[12px] mb-1.5" style={{ color: 'var(--text-secondary)' }}>Full name</label>
-              <input type="text" value={name} onChange={(e) => setName(e.target.value)} required placeholder="Emeka Okonkwo"
-                className={inputCls} style={{ borderColor: 'var(--border-medium)', color: 'var(--text-primary)' }}
-                onFocus={(e) => Object.assign(e.currentTarget.style, focusStyle)}
-                onBlur={(e) => Object.assign(e.currentTarget.style, blurStyle)}
+              <input
+                type="text" value={name} onChange={e => setName(e.target.value)} required
+                placeholder="Ahmed Al Mansoori"
+                className={inputBase}
+                style={{ borderColor: 'var(--border-medium)', color: 'var(--text-primary)' }}
+                onFocus={onFocus} onBlur={onBlur}
               />
             </div>
 
+            {/* Email */}
             <div>
               <label className="block font-sans font-semibold text-[12px] mb-1.5" style={{ color: 'var(--text-secondary)' }}>Email address</label>
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="you@example.com"
-                className={inputCls} style={{ borderColor: 'var(--border-medium)', color: 'var(--text-primary)' }}
-                onFocus={(e) => Object.assign(e.currentTarget.style, focusStyle)}
-                onBlur={(e) => Object.assign(e.currentTarget.style, blurStyle)}
+              <input
+                type="email" value={email} onChange={e => setEmail(e.target.value)} required
+                placeholder="you@example.com"
+                className={inputBase}
+                style={{ borderColor: 'var(--border-medium)', color: 'var(--text-primary)' }}
+                onFocus={onFocus} onBlur={onBlur}
               />
             </div>
 
+            {/* UAE phone */}
             <div>
-              <label className="block font-sans font-semibold text-[12px] mb-1.5" style={{ color: 'var(--text-secondary)' }}>Phone number</label>
+              <label className="block font-sans font-semibold text-[12px] mb-1.5" style={{ color: 'var(--text-secondary)' }}>UAE mobile number</label>
               <div className="relative flex items-center">
-                <div className="absolute left-0 h-full flex items-center px-3 border-r rounded-l-2xl font-sans font-medium text-[13px] pointer-events-none"
+                <div
+                  className="absolute left-0 h-full flex items-center px-3.5 border-r font-sans font-semibold text-[13px] pointer-events-none rounded-l-xl"
                   style={{ borderColor: 'var(--border-medium)', color: 'var(--text-secondary)', backgroundColor: 'var(--surface-raised)' }}
-                >+234</div>
-                <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))} required
-                  placeholder="801 234 5678" className={`${inputCls} pl-16`}
+                >
+                  🇦🇪 +971
+                </div>
+                <input
+                  type="tel" value={phone}
+                  onChange={e => setPhone(e.target.value.replace(/\D/g, '').slice(0, 9))}
+                  required placeholder="50 123 4567"
+                  className={`${inputBase} pl-24`}
                   style={{ borderColor: 'var(--border-medium)', color: 'var(--text-primary)' }}
-                  onFocus={(e) => Object.assign(e.currentTarget.style, focusStyle)}
-                  onBlur={(e) => Object.assign(e.currentTarget.style, blurStyle)}
+                  onFocus={onFocus} onBlur={onBlur}
                 />
               </div>
             </div>
 
+            {/* Password */}
             <div>
               <label className="block font-sans font-semibold text-[12px] mb-1.5" style={{ color: 'var(--text-secondary)' }}>Password</label>
               <div className="relative">
-                <input type={showPw ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} required
-                  placeholder="At least 8 characters" className={`${inputCls} pr-12`}
+                <input
+                  type={showPw ? 'text' : 'password'} value={password}
+                  onChange={e => setPassword(e.target.value)} required
+                  placeholder="At least 8 characters"
+                  className={`${inputBase} pr-12`}
                   style={{ borderColor: 'var(--border-medium)', color: 'var(--text-primary)' }}
-                  onFocus={(e) => Object.assign(e.currentTarget.style, focusStyle)}
-                  onBlur={(e) => Object.assign(e.currentTarget.style, blurStyle)}
+                  onFocus={onFocus} onBlur={onBlur}
                 />
-                <button type="button" onClick={() => setShowPw((p) => !p)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]">
+                <button type="button" onClick={() => setShowPw(p => !p)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
+                >
                   {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
               {password && (
                 <div className="mt-2 flex items-center gap-2">
                   <div className="flex-1 flex gap-1">
-                    {[1, 2, 3].map((i) => (
-                      <div key={i} className="flex-1 h-1 rounded-full transition-colors"
+                    {[1, 2, 3].map(i => (
+                      <div key={i} className="flex-1 h-1 rounded-full transition-all"
                         style={{ backgroundColor: pwStrength >= i ? pwColors[pwStrength] : 'var(--border-subtle)' }} />
                     ))}
                   </div>
-                  <span className="font-sans text-[11px] font-medium" style={{ color: pwColors[pwStrength] }}>
+                  <span className="font-sans text-[11px] font-semibold" style={{ color: pwColors[pwStrength] }}>
                     {pwLabels[pwStrength]}
                   </span>
                 </div>
               )}
             </div>
 
+            {/* Terms */}
             <label className="flex items-start gap-3 cursor-pointer mt-1">
-              <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)}
-                className="mt-0.5 w-4 h-4 rounded shrink-0" />
+              <input
+                type="checkbox" checked={agreed} onChange={e => setAgreed(e.target.checked)}
+                className="mt-0.5 w-4 h-4 rounded shrink-0 accent-teal-600"
+              />
               <span className="font-sans text-[12px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-                I agree to the{' '}
-                <Link href="/terms" className="underline" style={{ color: 'var(--green-700)' }}>Terms of Service</Link>
+                I agree to InsureAE&apos;s{' '}
+                <Link href="/terms" className="underline" style={{ color: 'var(--teal-600)' }}>Terms of Service</Link>
                 {' '}and{' '}
-                <Link href="/privacy" className="underline" style={{ color: 'var(--green-700)' }}>Privacy Policy</Link>.
-                I understand my data is processed in line with UAE Privacy.
+                <Link href="/privacy" className="underline" style={{ color: 'var(--teal-600)' }}>Privacy Policy</Link>.
+                My data is processed in compliance with UAE data protection regulations.
               </span>
             </label>
 
             {error && (
               <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                 className="font-sans text-[13px] px-4 py-2.5 rounded-xl"
-                style={{ backgroundColor: 'var(--error-bg)', color: 'var(--error)' }}>{error}</motion.p>
+                style={{ backgroundColor: 'var(--error-bg)', color: 'var(--error)' }}
+              >
+                {error}
+              </motion.p>
             )}
 
-            <button type="submit" disabled={isLoading}
-              className="w-full h-12 rounded-2xl font-sans font-semibold text-[15px] text-white flex items-center justify-center gap-2 transition-opacity disabled:opacity-60 mt-1"
-              style={{ backgroundColor: 'var(--green-700)' }}
+            <button
+              type="submit" disabled={isLoading}
+              className="w-full h-12 rounded-xl font-sans font-bold text-[14px] text-white flex items-center justify-center gap-2 transition-all disabled:opacity-60 hover:opacity-90 hover:shadow-lg mt-1"
+              style={{ background: 'linear-gradient(135deg, var(--navy-800) 0%, var(--teal-600) 100%)' }}
             >
               {isLoading
                 ? <motion.span className="w-5 h-5 rounded-full border-2 border-white/30 border-t-white"
@@ -206,7 +260,9 @@ export default function RegisterPage() {
 
           <p className="font-sans text-[13px] text-center mt-5" style={{ color: 'var(--text-muted)' }}>
             Already have an account?{' '}
-            <Link href="/login" className="font-semibold hover:underline" style={{ color: 'var(--green-700)' }}>Sign in</Link>
+            <Link href="/login" className="font-semibold hover:underline" style={{ color: 'var(--teal-600)' }}>
+              Sign in
+            </Link>
           </p>
         </motion.div>
       </div>

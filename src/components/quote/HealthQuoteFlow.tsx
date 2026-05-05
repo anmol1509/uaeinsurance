@@ -10,7 +10,7 @@ import Link from 'next/link'
 import Logo from '@/components/ui/Logo'
 
 /* ─── Types ──────────────────────────────────────────────── */
-type Emirate = { id: string; label: string; flag: string; isDubai?: boolean }
+type Emirate = { id: string; label: string; abbr: string; isDubai?: boolean }
 type MemberType = 'self' | 'spouse' | 'children' | 'parents'
 type SalaryBand = 'lsb' | 'nlsb'
 type PlanType = 'basic' | 'enhanced'
@@ -35,13 +35,13 @@ interface QuoteState {
 
 /* ─── Data ───────────────────────────────────────────────── */
 const EMIRATES: Emirate[] = [
-  { id: 'dubai',    label: 'Dubai',    flag: '🏙️', isDubai: true },
-  { id: 'abudhabi', label: 'Abu Dhabi', flag: '🏛️' },
-  { id: 'sharjah',  label: 'Sharjah',  flag: '🏘️' },
-  { id: 'ajman',    label: 'Ajman',    flag: '🌊' },
-  { id: 'uaq',      label: 'UAQ',      flag: '🏝️' },
-  { id: 'rak',      label: 'RAK',      flag: '⛰️' },
-  { id: 'fujairah', label: 'Fujairah', flag: '🌿' },
+  { id: 'dubai',    label: 'Dubai',     abbr: 'DXB', isDubai: true },
+  { id: 'abudhabi', label: 'Abu Dhabi', abbr: 'AUH' },
+  { id: 'sharjah',  label: 'Sharjah',  abbr: 'SHJ' },
+  { id: 'ajman',    label: 'Ajman',    abbr: 'AJM' },
+  { id: 'uaq',      label: 'UAQ',      abbr: 'UAQ' },
+  { id: 'rak',      label: 'RAK',      abbr: 'RKT' },
+  { id: 'fujairah', label: 'Fujairah', abbr: 'FJR' },
 ]
 
 const NE_PRODUCTS = [
@@ -218,25 +218,36 @@ export default function HealthQuoteFlow() {
                 desc="Your coverage terms depend on which emirate issued your visa."
               >
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-                  {EMIRATES.map(({ id, label, flag, isDubai: dub }) => (
-                    <button
-                      key={id}
-                      type="button"
-                      onClick={() => set('emirate', id)}
-                      className={cn(
-                        'flex items-center gap-2.5 p-3.5 rounded-xl border-2 text-left transition-all',
-                        quote.emirate === id
-                          ? 'border-[var(--teal-600)] bg-[var(--teal-50)]'
-                          : 'border-[var(--border-default)] bg-white hover:border-[var(--teal-400)] hover:bg-[var(--teal-50)]'
-                      )}
-                    >
-                      <span className="text-xl">{flag}</span>
-                      <div>
-                        <div className={cn('font-sans font-semibold text-[13.5px]', quote.emirate === id ? 'text-[var(--teal-700)]' : 'text-[var(--text-primary)]')}>{label}</div>
-                        {dub && <div className="font-sans text-[10px] text-[var(--teal-600)]">Mandatory DHA</div>}
-                      </div>
-                    </button>
-                  ))}
+                  {EMIRATES.map(({ id, label, abbr, isDubai: dub }) => {
+                    const active = quote.emirate === id
+                    return (
+                      <button
+                        key={id}
+                        type="button"
+                        onClick={() => set('emirate', id)}
+                        className={cn(
+                          'flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-all',
+                          active
+                            ? 'border-[var(--teal-600)] bg-[var(--teal-50)]'
+                            : 'border-[var(--border-default)] bg-white hover:border-[var(--teal-400)] hover:bg-[var(--teal-50)]'
+                        )}
+                      >
+                        <span
+                          className="w-10 h-10 rounded-lg flex items-center justify-center font-display font-extrabold text-[11px] shrink-0"
+                          style={{
+                            backgroundColor: active ? 'var(--teal-600)' : 'var(--navy-50)',
+                            color: active ? '#fff' : 'var(--navy-700)',
+                          }}
+                        >
+                          {abbr}
+                        </span>
+                        <div>
+                          <div className={cn('font-sans font-semibold text-[13px]', active ? 'text-[var(--teal-700)]' : 'text-[var(--text-primary)]')}>{label}</div>
+                          {dub && <div className="font-sans text-[10px] text-[var(--teal-600)]">Mandatory DHA</div>}
+                        </div>
+                      </button>
+                    )
+                  })}
                 </div>
                 <StepFooter onNext={() => {}} disabled={!quote.emirate} hideBack />
               </StepCard>
