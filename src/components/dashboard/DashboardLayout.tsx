@@ -5,20 +5,15 @@ import { usePathname, useRouter } from 'next/navigation'
 
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  LayoutDashboard, Shield, FileText, Clock, FolderOpen, Settings,
-  LogOut, Menu, X, ChevronRight, RefreshCw, Plus, BarChart2,
+  LayoutDashboard, Settings,
+  LogOut, Menu, X, ChevronRight, Plus,
 } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import Logo from '@/components/ui/Logo'
 
 const NAV = [
-  { label: 'Overview',          href: '/dashboard',            icon: LayoutDashboard },
-  { label: 'My Policies',       href: '/dashboard/policies',   icon: Shield },
-  { label: 'Quote History',     href: '/dashboard/quotes',     icon: Clock },
-  { label: 'Renewal List',      href: '/dashboard/renewals',   icon: RefreshCw },
-  { label: 'Claims',            href: '/dashboard/claims',     icon: FileText },
-  { label: 'Documents',         href: '/dashboard/documents',  icon: FolderOpen },
-  { label: 'Settings',          href: '/dashboard/settings',   icon: Settings },
+  { label: 'Overview',  href: '/dashboard',          icon: LayoutDashboard },
+  { label: 'Settings',  href: '/dashboard/settings', icon: Settings },
 ]
 
 const NAV_CTA = { label: 'New Quote', href: '/quote/health', icon: Plus }
