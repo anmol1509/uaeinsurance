@@ -235,31 +235,55 @@ export default function HealthQuoteFlow() {
 
       {/* Progress tabs */}
       <div className="bg-white border-b" style={{ borderColor: '#E5EAF0' }}>
-        <div className="max-w-[860px] mx-auto px-5">
-          <div className="flex items-center py-3">
+        <div className="max-w-[860px] mx-auto px-5 py-4">
+          {/* Step circles with properly centered connectors */}
+          <div className="relative flex items-start">
+            {/* Gray track — spans from center of first circle to center of last */}
+            <div className="absolute h-0.5 pointer-events-none"
+              style={{
+                top: 14,
+                left: `${50 / SECTIONS.length}%`,
+                right: `${50 / SECTIONS.length}%`,
+                backgroundColor: '#E5EAF0',
+                zIndex: 0,
+              }} />
+            {/* Teal progress fill */}
+            {(() => {
+              const sIdx = SECTION_STEPS.findIndex(ss => (ss as StepId[]).includes(step))
+              return sIdx > 0 ? (
+                <div className="absolute h-0.5 transition-all duration-500 pointer-events-none"
+                  style={{
+                    top: 14,
+                    left: `${50 / SECTIONS.length}%`,
+                    width: `${(sIdx / (SECTIONS.length - 1)) * (100 - 100 / SECTIONS.length)}%`,
+                    backgroundColor: '#0D9488',
+                    zIndex: 0,
+                  }} />
+              ) : null
+            })()}
             {SECTIONS.map((sec, i) => {
               const stepIds = SECTION_STEPS[i] as StepId[]
-              const done   = stepIds.every(s => steps.indexOf(s) < stepIdx)
-              const active = stepIds.includes(step)
+              const sIdx    = SECTION_STEPS.findIndex(ss => (ss as StepId[]).includes(step))
+              const done    = i < sIdx
+              const active  = i === sIdx
               return (
-                <div key={sec} className="flex-1 flex flex-col items-center relative">
-                  {i > 0 && <div className="absolute left-0 top-[14px] w-full h-0.5 -translate-y-1/2"
-                    style={{ backgroundColor: done ? '#0D9488' : '#E5EAF0', zIndex: 0 }} />}
-                  <div className="relative z-10 flex flex-col items-center gap-1">
-                    <div className="w-7 h-7 rounded-full flex items-center justify-center font-sans font-bold text-[11px] transition-all"
-                      style={{ backgroundColor: done ? '#0D9488' : active ? '#0F2D55' : 'white', border: done || active ? 'none' : '2px solid #CBD5E1', color: done || active ? 'white' : '#94A3B8' }}>
-                      {done ? <CheckCircle2 className="w-3.5 h-3.5" /> : i + 1}
-                    </div>
-                    <span className="font-sans font-medium text-[9.5px] text-center leading-tight hidden sm:block"
-                      style={{ color: active ? '#0F2D55' : done ? '#0D9488' : '#94A3B8' }}>{sec}</span>
+                <div key={sec} className="flex-1 flex flex-col items-center gap-1.5 relative z-10">
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center font-sans font-bold text-[11px] transition-all"
+                    style={{
+                      backgroundColor: done ? '#0D9488' : active ? '#0F2D55' : 'white',
+                      border: done || active ? 'none' : '2px solid #CBD5E1',
+                      color: done || active ? 'white' : '#94A3B8',
+                      boxShadow: active ? '0 0 0 3px rgba(15,45,85,0.15)' : 'none',
+                    }}>
+                    {done ? <CheckCircle2 className="w-3.5 h-3.5" /> : i + 1}
                   </div>
+                  <span className="font-sans font-medium text-[9.5px] text-center leading-tight hidden sm:block"
+                    style={{ color: active ? '#0F2D55' : done ? '#0D9488' : '#94A3B8' }}>
+                    {sec}
+                  </span>
                 </div>
               )
             })}
-          </div>
-          <div className="h-1 w-full rounded-full overflow-hidden mb-2" style={{ backgroundColor: '#E5EAF0' }}>
-            <div className="h-full transition-all duration-500 rounded-full"
-              style={{ width: `${progress}%`, background: 'linear-gradient(90deg,#0F2D55,#0D9488)' }} />
           </div>
         </div>
       </div>
@@ -585,67 +609,83 @@ export default function HealthQuoteFlow() {
                   </div>
                 ) : (
                   /* Non-Dubai: 3 fixed plan cards */
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
                     {NON_DUBAI_PLANS.map(plan => {
                       const sel = data.planType === plan.id
                       return (
                         <div key={plan.id}
-                          className={cn('relative rounded-2xl border-2 overflow-hidden cursor-pointer transition-all hover:-translate-y-1',
+                          className={cn('relative rounded-2xl border-2 cursor-pointer transition-all hover:-translate-y-1 flex flex-col',
                             sel ? 'border-[#0D9488] shadow-xl' : 'border-[#E5EAF0] hover:border-[#2DD4BF]',
                             plan.recommended ? 'ring-2 ring-[#0D9488] ring-offset-2' : '')}
                           onClick={() => set('planType', plan.id)}
                           style={{ backgroundColor: sel ? '#F0FDFA' : 'white' }}>
-                          {plan.tag && (
-                            <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full font-sans font-bold text-[10px] text-white"
-                              style={{ backgroundColor: plan.tagColor ?? '#0D9488' }}>{plan.tag}</div>
-                          )}
-                          <div className="p-4">
+
+                          {/* Plan name + tag row */}
+                          <div className="px-5 pt-5 pb-0">
                             <div className="flex items-start justify-between mb-1">
                               <div>
-                                <h3 className="font-display font-extrabold text-[18px]" style={{ color: sel ? '#0A7A72' : '#0F2D55' }}>{plan.name}</h3>
-                                <p className="font-sans text-[11px]" style={{ color: '#64748B' }}>{plan.insurer}</p>
+                                <h3 className="font-display font-extrabold text-[20px]" style={{ color: sel ? '#0A7A72' : '#0F2D55' }}>{plan.name}</h3>
+                                <p className="font-sans text-[12px]" style={{ color: '#64748B' }}>{plan.insurer}</p>
                               </div>
-                              {sel && <CheckCircle2 className="w-5 h-5 mt-0.5" style={{ color: '#0D9488' }} />}
+                              <div className="flex flex-col items-end gap-1.5 shrink-0 ml-2">
+                                {sel && <CheckCircle2 className="w-5 h-5" style={{ color: '#0D9488' }} />}
+                                {plan.tag && (
+                                  <span className="px-2.5 py-0.5 rounded-full font-sans font-bold text-[10px] text-white whitespace-nowrap"
+                                    style={{ backgroundColor: plan.tagColor ?? '#0D9488' }}>{plan.tag}</span>
+                                )}
+                              </div>
                             </div>
-                            <div className="my-3 py-3 border-y" style={{ borderColor: '#E5EAF0' }}>
-                              <div className="font-display font-extrabold text-[26px] leading-none" style={{ color: '#0F2D55' }}>
+
+                            {/* Price */}
+                            <div className="mt-3 mb-3 py-3 border-y" style={{ borderColor: '#E5EAF0' }}>
+                              <div className="font-display font-extrabold text-[30px] leading-none" style={{ color: '#0F2D55' }}>
                                 AED {plan.premium.toLocaleString()}
                               </div>
                               <div className="font-sans text-[11px] mt-0.5" style={{ color: '#64748B' }}>per year · self</div>
                             </div>
-                            <div className="space-y-1.5">
+
+                            {/* CTA button — at the top */}
+                            {plan.recommended && (
+                              <div className="text-center mb-2 font-sans text-[11px] font-semibold" style={{ color: '#0D9488' }}>
+                                ⭐ 68% of customers choose this
+                              </div>
+                            )}
+                            <button
+                              type="button"
+                              onClick={e => { e.stopPropagation(); set('planType', plan.id); setTimeout(goNext, 150) }}
+                              className="w-full h-11 rounded-xl font-sans font-bold text-[14px] transition-all hover:opacity-90 mb-4"
+                              style={{
+                                background: sel ? 'linear-gradient(135deg,#0F2D55,#0D9488)' : 'white',
+                                color: sel ? 'white' : '#0F2D55',
+                                border: sel ? 'none' : '2px solid #CBD5E1',
+                              }}>
+                              {sel ? 'Selected ✓' : 'Select Plan'}
+                            </button>
+                          </div>
+
+                          {/* Benefits + highlights */}
+                          <div className="px-5 pb-5 flex-1">
+                            <div className="space-y-2">
                               <BenefitRow label="Consultation"    value={plan.benefits.consultation} />
                               <BenefitRow label="In-patient"      value={plan.benefits.inpatient} />
                               <BenefitRow label="Out-patient"     value={plan.benefits.outpatient} />
                               <BenefitRow label="Medicine limit"  value={plan.benefits.medicineLimit} />
                               <BenefitRow label="Medicine copay"  value={plan.benefits.medicineCopay} />
                             </div>
-                            <div className="mt-3 pt-3 border-t space-y-1.5" style={{ borderColor: '#E5EAF0' }}>
+                            <div className="mt-4 pt-4 border-t space-y-2" style={{ borderColor: '#E5EAF0' }}>
                               {plan.highlights.map(h => (
                                 <div key={h} className="flex items-start gap-2">
                                   <CheckCircle2 className="w-3.5 h-3.5 mt-0.5 shrink-0" style={{ color: '#0D9488' }} />
-                                  <span className="font-sans text-[12px]" style={{ color: '#475569' }}>{h}</span>
+                                  <span className="font-sans text-[12.5px]" style={{ color: '#475569' }}>{h}</span>
                                 </div>
                               ))}
                               {plan.benefits.extras?.map(e => (
                                 <div key={e} className="flex items-start gap-2">
                                   <Star className="w-3.5 h-3.5 mt-0.5 shrink-0 fill-current" style={{ color: '#D4A24B' }} />
-                                  <span className="font-sans text-[12px]" style={{ color: '#475569' }}>{e}</span>
+                                  <span className="font-sans text-[12.5px]" style={{ color: '#475569' }}>{e}</span>
                                 </div>
                               ))}
                             </div>
-                          </div>
-                          <div className="px-4 pb-4">
-                            {plan.recommended && (
-                              <div className="text-center mb-2 font-sans text-[11px] font-semibold" style={{ color: '#0D9488' }}>
-                                ⭐ 68% of customers choose this
-                              </div>
-                            )}
-                            <button type="button" onClick={() => { set('planType', plan.id); setTimeout(goNext, 150) }}
-                              className="w-full h-10 rounded-xl font-sans font-bold text-[13.5px] transition-all hover:opacity-90"
-                              style={{ background: sel ? 'linear-gradient(135deg,#0F2D55,#0D9488)' : '#F4F7FB', color: sel ? 'white' : '#0F2D55', border: sel ? 'none' : '1px solid #CBD5E1' }}>
-                              {sel ? 'Selected ✓' : 'Select Plan'}
-                            </button>
                           </div>
                         </div>
                       )
