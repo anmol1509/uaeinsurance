@@ -3,7 +3,7 @@
   "buildCommand": "npm run build",
   "outputDirectory": ".next",
   "installCommand": "npm install",
-  "regions": ["dxb1"],
+  "regions": ["bom1"],
   "headers": [
     {
       "source": "/(.*)",
