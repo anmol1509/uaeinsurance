@@ -22,7 +22,7 @@ export default function LoginPage() {
   const [error, setError]     = useState('')
 
   useEffect(() => {
-    if (user) router.replace(user.role === 'admin' ? '/admin' : '/dashboard')
+    if (user) router.replace('/dashboard')
   }, [user, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -32,8 +32,7 @@ export default function LoginPage() {
     if (!result.success) {
       setError(result.error ?? 'Login failed. Please check your credentials.')
     } else {
-      const role = useAuthStore.getState().user?.role
-      router.push(role === 'admin' ? '/admin' : '/dashboard')
+      router.push('/dashboard')
     }
   }
 
