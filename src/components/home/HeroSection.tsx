@@ -1,278 +1,272 @@
 'use client'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { ArrowRight, Shield, CheckCircle2, Clock, Star } from 'lucide-react'
+import { ArrowRight, CheckCircle2, Star } from 'lucide-react'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 const emirates = [
-  { id: 'dubai',    label: 'Dubai',     abbr: 'DXB', isDubai: true  },
-  { id: 'abudhabi', label: 'Abu Dhabi', abbr: 'AUH', isDubai: false },
-  { id: 'sharjah',  label: 'Sharjah',  abbr: 'SHJ', isDubai: false },
-  { id: 'ajman',    label: 'Ajman',    abbr: 'AJM', isDubai: false },
-  { id: 'rak',      label: 'RAK',      abbr: 'RKT', isDubai: false },
-  { id: 'fujairah', label: 'Fujairah', abbr: 'FJR', isDubai: false },
-  { id: 'uaq',      label: 'UAQ',      abbr: 'UAQ', isDubai: false },
+  { id: 'dubai',    label: 'Dubai',     abbr: 'DXB', note: 'DHA mandatory' },
+  { id: 'abudhabi', label: 'Abu Dhabi', abbr: 'AUH', note: '' },
+  { id: 'sharjah',  label: 'Sharjah',  abbr: 'SHJ', note: '' },
+  { id: 'ajman',    label: 'Ajman',    abbr: 'AJM', note: '' },
+  { id: 'rak',      label: 'RAK',      abbr: 'RKT', note: '' },
+  { id: 'fujairah', label: 'Fujairah', abbr: 'FJR', note: '' },
+  { id: 'uaq',      label: 'UAQ',      abbr: 'UAQ', note: '' },
 ]
 
-const stats = [
-  { value: '75,000+', label: 'Insured residents' },
-  { value: '3 min',   label: 'Avg. quote time' },
-  { value: '97%',     label: 'Claims settled' },
-  { value: '14+',     label: 'Insurer partners' },
+// Live quote feed (mock)
+const LIVE_QUOTES = [
+  { name: 'Rajesh M.', plan: 'Enhanced · Dubai',    price: 'AED 1,840/yr', time: '2m ago' },
+  { name: 'Fatima A.', plan: 'Basic DHA · Sharjah', price: 'AED 762/yr',  time: '5m ago' },
+  { name: 'John B.',   plan: 'Family · Abu Dhabi',  price: 'AED 4,320/yr', time: '8m ago' },
 ]
 
-const badges = [
-  { icon: Shield,        text: 'IA Licensed & Regulated' },
-  { icon: CheckCircle2,  text: 'DHA & HAAD Compliant' },
-  { icon: Clock,         text: 'Certificate in 3 minutes' },
-]
+const INSURERS = ['AXA', 'Daman', 'ADNIC', 'GIG', 'Cigna', 'Allianz', 'RSA', 'Neuron']
+
+function cn(...cls: (string | boolean | undefined | null)[]) {
+  return cls.filter(Boolean).join(' ')
+}
 
 export default function HeroSection() {
-  const [selectedEmirate, setSelectedEmirate] = useState<string | null>(null)
+  const [selected, setSelected] = useState<string | null>(null)
   const router = useRouter()
 
-  const handleProceed = () => {
-    if (!selectedEmirate) return
-    router.push(`/quote/health?emirate=${selectedEmirate}`)
-  }
-
   return (
-    <section
-      className="relative overflow-hidden"
-      style={{ background: 'linear-gradient(150deg, var(--navy-950) 0%, var(--navy-900) 50%, #0C2A4A 100%)' }}
-    >
-      {/* Geometric background pattern */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <svg className="absolute top-0 right-0 w-[55%] h-full opacity-[0.04]" viewBox="0 0 600 700" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <polygon points="0,0 600,0 600,700" fill="white" />
-        </svg>
-        <div className="absolute top-20 right-[8%] w-72 h-72 rounded-full opacity-[0.06]" style={{ background: 'radial-gradient(circle, var(--teal-400) 0%, transparent 70%)' }} />
-        <div className="absolute bottom-10 left-[5%] w-48 h-48 rounded-full opacity-[0.05]" style={{ background: 'radial-gradient(circle, var(--gold-400) 0%, transparent 70%)' }} />
-        {/* Grid lines */}
-        <svg className="absolute inset-0 w-full h-full opacity-[0.03]" xmlns="http://www.w3.org/2000/svg">
+    <section className="relative overflow-hidden">
+      {/* Full-width navy top band */}
+      <div
+        className="absolute inset-x-0 top-0 h-[360px] lg:h-[420px]"
+        style={{ background: 'linear-gradient(155deg, #060F1E 0%, #0B2545 55%, #0B3D6B 100%)' }}
+      >
+        {/* Subtle grid */}
+        <svg className="absolute inset-0 w-full h-full opacity-[0.025]" xmlns="http://www.w3.org/2000/svg">
           <defs>
-            <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
-              <path d="M 60 0 L 0 0 0 60" fill="none" stroke="white" strokeWidth="0.5"/>
+            <pattern id="hgrid" width="48" height="48" patternUnits="userSpaceOnUse">
+              <path d="M 48 0 L 0 0 0 48" fill="none" stroke="white" strokeWidth="0.5"/>
             </pattern>
           </defs>
-          <rect width="100%" height="100%" fill="url(#grid)" />
+          <rect width="100%" height="100%" fill="url(#hgrid)" />
         </svg>
+        {/* Teal glow */}
+        <div className="absolute right-0 top-0 w-[500px] h-full opacity-[0.08] pointer-events-none"
+          style={{ background: 'radial-gradient(ellipse at right top, var(--teal-400), transparent 60%)' }} />
       </div>
 
-      <div className="relative max-w-[1320px] mx-auto px-5 lg:px-8 py-16 lg:py-20">
-        <div className="grid lg:grid-cols-[1fr_440px] gap-12 lg:gap-16 items-center">
+      <div className="relative max-w-[1320px] mx-auto px-5 lg:px-8 pt-14 pb-0">
+        <div className="grid lg:grid-cols-2 gap-10 lg:gap-14 items-start">
 
-          {/* Left: Content */}
-          <div>
-            {/* Award tag */}
+          {/* ── LEFT: Brand + Visual ── */}
+          <div className="pt-2">
+            {/* Award pill */}
             <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4 }}
-              className="inline-flex items-center gap-2 mb-6 px-3.5 py-1.5 rounded-full border"
-              style={{
-                backgroundColor: 'rgba(212,162,75,0.12)',
-                borderColor: 'rgba(212,162,75,0.35)',
-                color: 'var(--gold-400)',
-              }}
+              initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}
+              className="inline-flex items-center gap-1.5 mb-5 px-3.5 py-1.5 rounded-full border"
+              style={{ backgroundColor: 'rgba(212,162,75,0.14)', borderColor: 'rgba(212,162,75,0.35)', color: 'var(--gold-400)' }}
             >
               <Star className="w-3 h-3 fill-current" />
-              <span className="font-sans font-semibold text-[12px] tracking-wide">
-                UAE&apos;s #1 Health Insurance Comparison Platform
-              </span>
+              <span className="font-sans font-bold text-[11.5px] tracking-wide">UAE&apos;s #1 Health Insurance Platform</span>
             </motion.div>
 
-            {/* Headline */}
-            <motion.h1
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.45, delay: 0.06 }}
-              className="font-display font-extrabold leading-[1.07] tracking-tight text-white mb-5"
-              style={{ fontSize: 'clamp(36px, 4.8vw, 58px)' }}
+            {/* Headline — bold, different treatment */}
+            <motion.div
+              initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.06 }}
+              className="mb-5"
             >
-              Health insurance
-              <br />
-              built for the{' '}
-              <span
-                className="relative"
-                style={{ color: 'var(--teal-400)' }}
-              >
-                UAE
-                <svg className="absolute -bottom-2 left-0 w-full" viewBox="0 0 100 8" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
-                  <path d="M2 6 Q25 2 50 5 Q75 8 98 4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" fill="none" opacity="0.7"/>
-                </svg>
-              </span>
-            </motion.h1>
+              <h1 className="font-display font-extrabold text-white leading-[1.06] tracking-tight"
+                style={{ fontSize: 'clamp(34px, 4.5vw, 54px)' }}>
+                Compare <span style={{ color: 'var(--teal-400)' }}>14+ health</span><br />
+                insurance plans<br />
+                <span className="text-white">in 3 minutes.</span>
+              </h1>
+            </motion.div>
 
-            {/* Sub-headline */}
             <motion.p
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.12 }}
-              className="font-sans text-[16px] leading-relaxed mb-8 max-w-[460px]"
-              style={{ color: 'var(--navy-200)' }}
+              initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.38, delay: 0.12 }}
+              className="font-sans text-[15px] leading-relaxed mb-7"
+              style={{ color: 'var(--navy-200)', maxWidth: '440px' }}
             >
-              Instant DHA-compliant quotes from 14+ licensed insurers.
-              Coverage for individuals, families, and businesses across all 7 emirates.
+              DHA &amp; HAAD compliant health plans for every UAE resident.
+              IA-licensed. No broker fees. Certificate in minutes.
             </motion.p>
 
-            {/* Trust badges */}
+            {/* Insurer logo strip */}
             <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.18 }}
-              className="flex flex-wrap gap-4 mb-10"
+              initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.38, delay: 0.18 }}
+              className="mb-8"
             >
-              {badges.map(({ icon: Icon, text }) => (
-                <div key={text} className="flex items-center gap-2">
-                  <Icon className="w-4 h-4 shrink-0" style={{ color: 'var(--teal-400)' }} />
-                  <span className="font-sans text-[13px]" style={{ color: 'var(--navy-200)' }}>
-                    {text}
-                  </span>
+              <p className="font-sans font-semibold text-[10.5px] uppercase tracking-widest mb-3" style={{ color: 'var(--navy-500)' }}>
+                From these licensed insurers
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {INSURERS.map((ins, i) => (
+                  <motion.span
+                    key={ins}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.2 + i * 0.04 }}
+                    className="px-3 py-1.5 rounded-lg font-display font-extrabold text-[11px] border"
+                    style={{
+                      backgroundColor: 'rgba(255,255,255,0.07)',
+                      borderColor: 'rgba(255,255,255,0.12)',
+                      color: 'rgba(255,255,255,0.75)',
+                    }}
+                  >
+                    {ins}
+                  </motion.span>
+                ))}
+                <span className="px-3 py-1.5 rounded-lg font-sans text-[11px] border"
+                  style={{ backgroundColor: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.4)' }}>
+                  +6 more
+                </span>
+              </div>
+            </motion.div>
+
+            {/* Checkmarks */}
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}
+              className="flex flex-wrap gap-x-6 gap-y-2"
+            >
+              {['IA Licensed', 'DHA & HAAD Compliant', 'No broker fees', '3-min certificate'].map(t => (
+                <div key={t} className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--teal-400)' }} />
+                  <span className="font-sans text-[13px]" style={{ color: 'var(--navy-300)' }}>{t}</span>
                 </div>
               ))}
             </motion.div>
 
-            {/* Stats row */}
+            {/* Live policy feed — only on lg */}
             <motion.div
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.24 }}
-              className="grid grid-cols-2 sm:grid-cols-4 gap-4"
+              transition={{ delay: 0.45 }}
+              className="hidden lg:block mt-8 pb-8"
             >
-              {stats.map(({ value, label }) => (
-                <div key={label} className="text-center sm:text-left">
-                  <div className="font-display font-extrabold text-2xl text-white leading-none mb-1">
-                    {value}
-                  </div>
-                  <div className="font-sans text-[12px]" style={{ color: 'var(--navy-400)' }}>
-                    {label}
-                  </div>
-                </div>
-              ))}
+              <p className="font-sans font-semibold text-[10.5px] uppercase tracking-widest mb-3" style={{ color: 'var(--navy-500)' }}>
+                Live recent quotes
+              </p>
+              <div className="space-y-2">
+                {LIVE_QUOTES.map((q, i) => (
+                  <motion.div
+                    key={q.name}
+                    initial={{ opacity: 0, x: -12 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.55 + i * 0.1 }}
+                    className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl"
+                    style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}
+                  >
+                    <div className="w-2 h-2 rounded-full shrink-0 animate-pulse" style={{ backgroundColor: 'var(--teal-400)' }} />
+                    <span className="font-sans font-semibold text-[12.5px] text-white">{q.name}</span>
+                    <span className="font-sans text-[12px]" style={{ color: 'var(--navy-400)' }}>{q.plan}</span>
+                    <span className="ml-auto font-display font-bold text-[12px]" style={{ color: 'var(--teal-400)' }}>{q.price}</span>
+                    <span className="font-sans text-[10px]" style={{ color: 'var(--navy-500)' }}>{q.time}</span>
+                  </motion.div>
+                ))}
+              </div>
             </motion.div>
           </div>
 
-          {/* Right: Quote form card */}
+          {/* ── RIGHT: Quote form card ── */}
           <motion.div
-            initial={{ opacity: 0, x: 24 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.15 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, delay: 0.1 }}
             className="bg-white rounded-2xl shadow-2xl overflow-hidden"
+            style={{ marginTop: '0' }}
           >
             {/* Card header */}
-            <div className="px-6 pt-6 pb-4 border-b border-[var(--border-subtle)]">
-              <h2 className="font-display font-bold text-[18px] text-[var(--navy-900)] mb-0.5">
-                Get your free quote
-              </h2>
-              <p className="font-sans text-[13px] text-[var(--text-muted)]">
-                Select your emirate of visa issuance to start
-              </p>
+            <div
+              className="px-6 py-4 border-b border-[var(--border-subtle)]"
+              style={{ background: 'linear-gradient(135deg, var(--navy-50) 0%, var(--teal-50) 100%)' }}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="font-display font-bold text-[17px] text-[var(--navy-900)]">Get your free health quote</h2>
+                  <p className="font-sans text-[12.5px] text-[var(--text-muted)]">Select your emirate to begin</p>
+                </div>
+                <div className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-sans font-bold" style={{ backgroundColor: 'var(--teal-100)', color: 'var(--teal-700)' }}>
+                  Free
+                </div>
+              </div>
             </div>
 
             <div className="p-5">
-              {/* Step indicator */}
+              {/* Step label */}
               <div className="flex items-center gap-2 mb-4">
-                <div
-                  className="w-5 h-5 rounded-full flex items-center justify-center font-sans font-bold text-[10px] text-white shrink-0"
-                  style={{ backgroundColor: 'var(--teal-600)' }}
-                >
-                  1
-                </div>
-                <span className="font-sans font-semibold text-[12px] text-[var(--text-secondary)]">
-                  Step 1 — Select Emirate of Visa Issuance
-                </span>
+                <span className="w-5 h-5 rounded-full font-sans font-bold text-[10px] text-white flex items-center justify-center shrink-0" style={{ backgroundColor: 'var(--teal-600)' }}>1</span>
+                <span className="font-sans font-semibold text-[12px] text-[var(--text-secondary)]">Step 1 — Emirate of Visa Issuance</span>
               </div>
 
               {/* Emirates grid */}
               <div className="grid grid-cols-2 gap-2 mb-5">
-                {emirates.map(({ id, label, abbr, isDubai }) => {
-                  const active = selectedEmirate === id
+                {emirates.map(({ id, label, abbr, note }) => {
+                  const active = selected === id
                   return (
-                    <button
-                      key={id}
-                      type="button"
-                      onClick={() => setSelectedEmirate(id)}
+                    <button key={id} type="button" onClick={() => setSelected(id)}
                       className={cn(
-                        'flex items-center gap-3 px-3 py-2.5 rounded-xl border-2 text-left transition-all duration-150',
+                        'flex items-center gap-2.5 px-3 py-2.5 rounded-xl border-2 text-left transition-all',
                         active
                           ? 'border-[var(--teal-600)] bg-[var(--teal-50)]'
                           : 'border-[var(--border-default)] bg-white hover:border-[var(--teal-400)] hover:bg-[var(--teal-50)]'
                       )}
                     >
-                      {/* IATA-style code badge */}
                       <span
-                        className="w-9 h-9 rounded-lg flex items-center justify-center font-display font-extrabold text-[10px] shrink-0 leading-none"
-                        style={{
-                          backgroundColor: active ? 'var(--teal-600)' : 'var(--navy-50)',
-                          color: active ? '#fff' : 'var(--navy-700)',
-                        }}
+                        className="w-9 h-9 rounded-lg font-display font-extrabold text-[10px] flex items-center justify-center shrink-0"
+                        style={{ backgroundColor: active ? 'var(--teal-600)' : 'var(--navy-50)', color: active ? '#fff' : 'var(--navy-700)' }}
                       >
                         {abbr}
                       </span>
                       <div className="min-w-0">
-                        <span
-                          className={cn(
-                            'font-sans font-semibold text-[13px] block leading-none mb-0.5 truncate',
-                            active ? 'text-[var(--teal-700)]' : 'text-[var(--text-primary)]'
-                          )}
-                        >
-                          {label}
-                        </span>
-                        {isDubai && (
-                          <span className="font-sans text-[10px]" style={{ color: 'var(--teal-600)' }}>
-                            DHA mandatory
-                          </span>
-                        )}
+                        <div className="font-sans font-bold text-[13px] truncate" style={{ color: active ? 'var(--teal-700)' : 'var(--text-primary)' }}>{label}</div>
+                        {note && <div className="font-sans text-[10px]" style={{ color: 'var(--teal-600)' }}>{note}</div>}
                       </div>
-                      {active && (
-                        <CheckCircle2 className="w-4 h-4 ml-auto shrink-0" style={{ color: 'var(--teal-600)' }} />
-                      )}
                     </button>
                   )
                 })}
               </div>
 
-              {/* CTA */}
               <button
                 type="button"
-                onClick={handleProceed}
-                disabled={!selectedEmirate}
+                disabled={!selected}
+                onClick={() => selected && router.push(`/quote/health?emirate=${selected}`)}
                 className={cn(
-                  'w-full h-12 rounded-xl font-sans font-bold text-[14px] flex items-center justify-center gap-2 transition-all duration-200',
-                  selectedEmirate
-                    ? 'text-white hover:opacity-90 hover:shadow-lg hover:-translate-y-0.5'
-                    : 'text-[var(--text-subtle)] cursor-not-allowed'
+                  'w-full h-12 rounded-xl font-sans font-bold text-[14.5px] flex items-center justify-center gap-2 transition-all',
+                  selected ? 'text-white hover:opacity-90 hover:shadow-lg hover:-translate-y-0.5' : 'cursor-not-allowed'
                 )}
                 style={{
-                  background: selectedEmirate
+                  background: selected
                     ? 'linear-gradient(135deg, var(--navy-800) 0%, var(--teal-600) 100%)'
                     : 'var(--border-default)',
+                  color: selected ? 'white' : 'var(--text-subtle)',
                 }}
               >
-                Continue
-                <ArrowRight className="w-4 h-4" />
+                Continue <ArrowRight className="w-4 h-4" />
               </button>
 
-              {/* Footer note */}
-              <p className="mt-3.5 text-center font-sans text-[11px] text-[var(--text-subtle)]">
-                No spam · No commitment · Quotes in under 3 minutes
+              <p className="mt-3 text-center font-sans text-[11px] text-[var(--text-subtle)]">
+                No spam · No commitment · Results in 3 minutes
               </p>
+            </div>
+
+            {/* Bottom trust bar */}
+            <div className="px-5 py-3 border-t flex items-center justify-center gap-4" style={{ borderColor: 'var(--border-subtle)', backgroundColor: 'var(--surface-raised)' }}>
+              {[
+                { label: '14+ Insurers' },
+                { label: 'IA Licensed' },
+                { label: '75,000+ Customers' },
+              ].map(({ label }) => (
+                <div key={label} className="flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3" style={{ color: 'var(--teal-600)' }} />
+                  <span className="font-sans text-[11px] font-semibold text-[var(--text-muted)]">{label}</span>
+                </div>
+              ))}
             </div>
           </motion.div>
         </div>
       </div>
 
-      {/* Bottom fade into page */}
-      <div
-        className="h-10"
-        style={{ background: 'linear-gradient(to bottom, transparent, var(--page-bg))' }}
-      />
+      {/* Bottom fade to page-bg */}
+      <div className="h-12 relative" style={{ background: 'linear-gradient(to bottom, #0B2545, var(--page-bg))' }} />
     </section>
   )
-}
-
-function cn(...classes: (string | boolean | undefined | null)[]): string {
-  return classes.filter(Boolean).join(' ')
 }
