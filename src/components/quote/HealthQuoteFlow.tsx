@@ -73,21 +73,38 @@ const DUBAI_ENHANCED_BASE_LSB  = 850
 const DUBAI_ENHANCED_BASE_NLSB = 1_200
 
 /* ─── Types ──────────────────────────────────────────────── */
-type StepId = 'emirate' | 'member_type' | 'salary' | 'dependents' | 'plan_type' | 'enhanced_config' | 'checkout'
+type StepId = 'emirate' | 'member_type' | 'personal_details' | 'dependent_type' | 'dependent_details' | 'plan_type' | 'enhanced_config' | 'checkout'
 
 interface EnhancedConfig { consultation: string; inpatient: string; outpatient: string; medicineLimit: string; medicineCopay: string }
 
 interface QuoteData {
   emirate: string
-  memberType: string       // 'self' | 'dependent'
-  salaryBand: string       // 'lsb' | 'nlsb' — Dubai+Self only
-  hasSpouse: boolean
-  children: number
-  hasParents: boolean
-  planType: string         // 'basic' | 'enhanced' | fixed plan id for non-dubai
+  memberType: string            // 'self' | 'dependent'
+  // Self details
+  selfName: string
+  selfEID: string
+  selfEmail: string
+  selfPhone: string
+  selfNationality: string
+  selfSalaryBand: string        // 'lsb' | 'nlsb'
+  // Dependent type
+  dependentType: string         // 'spouse' | 'children' | 'family'
+  dependentChildrenCount: number
+  // Dependent personal details
+  depName: string
+  depEmail: string
+  depPhone: string
+  depNationality: string
+  // Sponsor details (for dependent flow)
+  sponsorName: string
+  sponsorEID: string
+  sponsorEmail: string
+  sponsorPhone: string
+  sponsorNationality: string
+  sponsorSalaryBand: string     // 'lsb' | 'nlsb'
+  // Plan
+  planType: string              // 'basic' | 'enhanced' | fixed plan id
   enhancedConfig: EnhancedConfig
-  // contact — collected at checkout
-  name: string; email: string; mobile: string
 }
 
 function cn(...cls: (string | boolean | undefined | null)[]) { return cls.filter(Boolean).join(' ') }
@@ -111,16 +128,21 @@ const SOCIAL_PROOF: Record<string, string> = {
 }
 
 /* ─── Premium calculation ────────────────────────────────── */
+function getSalaryBand(data: QuoteData): string {
+  return data.memberType === 'dependent' ? data.sponsorSalaryBand : data.selfSalaryBand
+}
+
 function calcBasePremium(data: QuoteData): number {
+  const band = getSalaryBand(data)
   if (data.emirate !== 'dubai') {
     const plan = NON_DUBAI_PLANS.find(p => p.id === data.planType)
     return plan?.premium ?? 0
   }
   if (data.planType === 'basic') {
-    return data.salaryBand === 'lsb' ? DUBAI_BASIC_LSB.premium : DUBAI_BASIC_NLSB.premium
+    return band === 'lsb' ? DUBAI_BASIC_LSB.premium : DUBAI_BASIC_NLSB.premium
   }
   // enhanced
-  const base = data.salaryBand === 'lsb' ? DUBAI_ENHANCED_BASE_LSB : DUBAI_ENHANCED_BASE_NLSB
+  const base = band === 'lsb' ? DUBAI_ENHANCED_BASE_LSB : DUBAI_ENHANCED_BASE_NLSB
   const cfg = data.enhancedConfig
   const addOn = (
     (CONSULTATION_OPTIONS.find(o => o.id === cfg.consultation)?.addOnPct ?? 0) +
@@ -134,11 +156,13 @@ function calcBasePremium(data: QuoteData): number {
 
 function calcTotalPremium(data: QuoteData): number {
   const base = calcBasePremium(data)
-  let total = base
-  if (data.hasSpouse) total += Math.round(base * 0.85)
-  total += data.children * Math.round(base * 0.55)
-  if (data.hasParents) total += Math.round(base * 1.2)
-  return total
+  if (data.memberType !== 'dependent') return base
+  const dt = data.dependentType
+  const kids = data.dependentChildrenCount
+  if (dt === 'spouse') return Math.round(base * 0.85)
+  if (dt === 'children') return kids * Math.round(base * 0.55)
+  if (dt === 'family') return Math.round(base * 0.85) + kids * Math.round(base * 0.55)
+  return base
 }
 
 /* ─── Main component ─────────────────────────────────────── */
@@ -149,11 +173,13 @@ export default function HealthQuoteFlow() {
   const [step, setStep] = useState<StepId>('emirate')
   const [data, setData] = useState<QuoteData>({
     emirate: searchParams.get('emirate') || '',
-    memberType: '', salaryBand: '',
-    hasSpouse: false, children: 0, hasParents: false,
+    memberType: '',
+    selfName: '', selfEID: '', selfEmail: '', selfPhone: '', selfNationality: '', selfSalaryBand: '',
+    dependentType: '', dependentChildrenCount: 1,
+    depName: '', depEmail: '', depPhone: '', depNationality: '',
+    sponsorName: '', sponsorEID: '', sponsorEmail: '', sponsorPhone: '', sponsorNationality: '', sponsorSalaryBand: '',
     planType: '',
     enhancedConfig: { consultation: '', inpatient: '', outpatient: '', medicineLimit: '', medicineCopay: '' },
-    name: '', email: '', mobile: '',
   })
 
   const set = useCallback(<K extends keyof QuoteData>(k: K, v: QuoteData[K]) =>
@@ -167,12 +193,15 @@ export default function HealthQuoteFlow() {
   function getSteps(): StepId[] {
     const s: StepId[] = ['emirate']
     if (!data.emirate) return s
-    if (!isDubai) { s.push('plan_type', 'checkout'); return s }
     s.push('member_type')
-    if (data.memberType === 'dependent') s.push('dependents')
-    if (data.memberType === 'self')      s.push('salary')
+    if (!data.memberType) return s
+    if (data.memberType === 'self') {
+      s.push('personal_details')
+    } else {
+      s.push('dependent_type', 'dependent_details')
+    }
     s.push('plan_type')
-    if (data.planType === 'enhanced')    s.push('enhanced_config')
+    if (data.planType === 'enhanced' && isDubai) s.push('enhanced_config')
     s.push('checkout')
     return s
   }
@@ -182,14 +211,6 @@ export default function HealthQuoteFlow() {
   const progress = Math.round(((stepIdx + 1) / steps.length) * 100)
 
   function goNext() {
-    if (step === 'emirate' && data.emirate) {
-      setStep(data.emirate === 'dubai' ? 'member_type' : 'plan_type')
-      return
-    }
-    if (step === 'plan_type' && data.planType === 'enhanced' && isDubai) {
-      setStep('enhanced_config')
-      return
-    }
     const next = steps[steps.indexOf(step) + 1]
     if (next) setStep(next)
   }
@@ -208,12 +229,12 @@ export default function HealthQuoteFlow() {
   const basePremium  = calcBasePremium(data)
 
   /* ── Section labels ── */
-  const SECTIONS = isDubai
-    ? ['Emirate', 'Members', data.memberType === 'self' ? 'Salary' : 'Dependents', 'Plan', 'Checkout']
-    : ['Emirate', 'Plan', 'Checkout']
-  const SECTION_STEPS = isDubai
-    ? [['emirate'], ['member_type'], data.memberType === 'self' ? ['salary'] : ['dependents'], ['plan_type', 'enhanced_config'], ['checkout']]
-    : [['emirate'], ['plan_type'], ['checkout']]
+  const SECTIONS = data.memberType === 'dependent'
+    ? ['Emirate', 'Type', 'Dep. Type', 'Details', 'Plan', 'Checkout']
+    : ['Emirate', 'Type', 'Details', 'Plan', 'Checkout']
+  const SECTION_STEPS: StepId[][] = data.memberType === 'dependent'
+    ? [['emirate'], ['member_type'], ['dependent_type'], ['dependent_details'], ['plan_type', 'enhanced_config'], ['checkout']]
+    : [['emirate'], ['member_type'], ['personal_details'], ['plan_type', 'enhanced_config'], ['checkout']]
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#F4F7FB' }}>
@@ -372,13 +393,13 @@ export default function HealthQuoteFlow() {
               </Shell>
             )}
 
-            {/* ══ MEMBER TYPE (Dubai) ══ */}
+            {/* ══ MEMBER TYPE ══ */}
             {step === 'member_type' && (
-              <Shell title="Who are you insuring?" sub="Select the primary category for this policy" icon="👥">
+              <Shell title="Who are you insuring?" sub="Select who this policy is for" icon="👥">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {([
-                    { id: 'self',      label: 'Self Only',         sub: 'Coverage for yourself only',  icon: User },
-                    { id: 'dependent', label: 'Self + Dependents', sub: 'Spouse, children, parents',   icon: Users },
+                    { id: 'self',      label: 'Self',      sub: 'Coverage for yourself only',               icon: User },
+                    { id: 'dependent', label: 'Dependent', sub: 'Spouse, children or family members',       icon: Users },
                   ] as const).map(({ id, label, sub, icon: Icon }) => {
                     const active = data.memberType === id
                     return (
@@ -391,7 +412,7 @@ export default function HealthQuoteFlow() {
                           <Icon className="w-7 h-7" style={{ color: active ? 'white' : '#133B6E' }} />
                         </div>
                         <div>
-                          <div className="font-sans font-bold text-[15px]" style={{ color: active ? '#0A7A72' : '#0F2D55' }}>{label}</div>
+                          <div className="font-sans font-bold text-[16px]" style={{ color: active ? '#0A7A72' : '#0F2D55' }}>{label}</div>
                           <div className="font-sans text-[12px] mt-0.5" style={{ color: '#64748B' }}>{sub}</div>
                         </div>
                         {active && <CheckCircle2 className="w-5 h-5" style={{ color: '#0D9488' }} />}
@@ -403,81 +424,257 @@ export default function HealthQuoteFlow() {
               </Shell>
             )}
 
-            {/* ══ SALARY (Dubai + Self) ══ */}
-            {step === 'salary' && (
-              <Shell title="What is your monthly salary?" sub="Determines your DHA mandatory plan tier" icon="💼">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* ══ PERSONAL DETAILS (Self) ══ */}
+            {step === 'personal_details' && (
+              <div>
+                <div className="text-center mb-6">
+                  <div className="text-4xl mb-3">👤</div>
+                  <h2 className="font-display font-bold text-[22px] leading-tight mb-1" style={{ color: '#0F2D55' }}>Your Details</h2>
+                  <p className="font-sans text-[14px]" style={{ color: '#64748B' }}>We need a few details to prepare your quote</p>
+                </div>
+                <div className="bg-white rounded-2xl border p-5 space-y-4 mb-4" style={{ borderColor: '#E5EAF0' }}>
+                  <p className="font-sans font-bold text-[11px] uppercase tracking-widest" style={{ color: '#94A3B8' }}>Personal Information</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <FormField label="Full Name" required>
+                      <input type="text" value={data.selfName} placeholder="Ahmed Al Mansoori"
+                        onChange={e => set('selfName', e.target.value)}
+                        className="w-full h-12 rounded-xl border px-4 font-sans text-[14px] bg-white outline-none"
+                        style={{ borderColor: '#E5EAF0' }} onFocus={foc} onBlur={blu} />
+                    </FormField>
+                    <FormField label="Emirates ID" required>
+                      <input type="text" value={data.selfEID} placeholder="784-XXXX-XXXXXXX-X"
+                        onChange={e => set('selfEID', e.target.value)}
+                        className="w-full h-12 rounded-xl border px-4 font-sans text-[14px] bg-white outline-none"
+                        style={{ borderColor: '#E5EAF0' }} onFocus={foc} onBlur={blu} />
+                    </FormField>
+                    <FormField label="Email Address" required>
+                      <input type="email" value={data.selfEmail} placeholder="you@example.com"
+                        onChange={e => set('selfEmail', e.target.value)}
+                        className="w-full h-12 rounded-xl border px-4 font-sans text-[14px] bg-white outline-none"
+                        style={{ borderColor: '#E5EAF0' }} onFocus={foc} onBlur={blu} />
+                    </FormField>
+                    <FormField label="UAE Mobile" required>
+                      <div className="flex">
+                        <span className="flex items-center px-3.5 border border-r-0 rounded-l-xl font-sans font-semibold text-[13px] shrink-0 h-12"
+                          style={{ borderColor: '#E5EAF0', backgroundColor: '#F4F7FB', color: '#475569' }}>🇦🇪 +971</span>
+                        <input type="tel" value={data.selfPhone} placeholder="50 123 4567"
+                          onChange={e => set('selfPhone', e.target.value.replace(/\D/g, '').slice(0, 9))}
+                          className="flex-1 h-12 rounded-r-xl border px-4 font-sans text-[14px] bg-white outline-none"
+                          style={{ borderColor: '#E5EAF0' }} onFocus={foc} onBlur={blu} />
+                      </div>
+                    </FormField>
+                    <FormField label="Nationality" required>
+                      <select value={data.selfNationality} onChange={e => set('selfNationality', e.target.value)}
+                        className="w-full h-12 rounded-xl border px-4 font-sans text-[14px] bg-white outline-none appearance-none"
+                        style={{ borderColor: '#E5EAF0', color: data.selfNationality ? '#0F2D55' : '#94A3B8' }}>
+                        <option value="">Select nationality</option>
+                        {['UAE','Indian','Pakistani','Filipino','Bangladeshi','Egyptian','British','American','Canadian','Other'].map(n => (
+                          <option key={n} value={n}>{n}</option>
+                        ))}
+                      </select>
+                    </FormField>
+                  </div>
+                </div>
+                <div className="bg-white rounded-2xl border p-5 mb-4" style={{ borderColor: '#E5EAF0' }}>
+                  <p className="font-sans font-bold text-[11px] uppercase tracking-widest mb-4" style={{ color: '#94A3B8' }}>Monthly Salary Band</p>
+                  <p className="font-sans text-[12.5px] mb-4" style={{ color: '#64748B' }}>Required for Dubai DHA plan eligibility</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {([
+                      { id: 'lsb',  title: 'LSB',  subtitle: 'Low Salary Band',     amount: 'Up to AED 4,000 / month',   color: '#0D9488' },
+                      { id: 'nlsb', title: 'NLSB', subtitle: 'Non-Low Salary Band', amount: 'Above AED 4,000 / month',   color: '#0F2D55' },
+                    ] as const).map(({ id, title, subtitle, amount, color }) => {
+                      const active = data.selfSalaryBand === id
+                      return (
+                        <button key={id} type="button" onClick={() => set('selfSalaryBand', id)}
+                          className="flex flex-col items-start p-4 rounded-2xl border-2 text-left transition-all hover:-translate-y-0.5"
+                          style={{ borderColor: active ? color : '#E5EAF0', backgroundColor: active ? (id === 'lsb' ? '#F0FDFA' : '#EBF2FA') : 'white' }}>
+                          <div className="flex items-center justify-between w-full mb-2">
+                            <span className="font-display font-extrabold text-[22px]" style={{ color }}>{title}</span>
+                            {active && <CheckCircle2 className="w-5 h-5" style={{ color }} />}
+                          </div>
+                          <div className="font-sans font-bold text-[13px] mb-0.5" style={{ color: '#0F2D55' }}>{subtitle}</div>
+                          <div className="font-sans text-[12px]" style={{ color: '#475569' }}>{amount}</div>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+                <Buttons onNext={goNext}
+                  disabled={!data.selfName || !data.selfEmail || !data.selfPhone || !data.selfNationality || !data.selfSalaryBand}
+                  onBack={goBack} nextLabel="View Plans" />
+              </div>
+            )}
+
+            {/* ══ DEPENDENT TYPE ══ */}
+            {step === 'dependent_type' && (
+              <Shell title="Who are you covering?" sub="Select the type of dependent to insure" icon="👨‍👩‍👧">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   {([
-                    { id: 'lsb',  title: 'LSB',  subtitle: 'Low Salary Band',      amount: 'Up to AED 4,000/month',    note: 'DHA Basic plan required',    color: '#0D9488' },
-                    { id: 'nlsb', title: 'NLSB', subtitle: 'Non-Low Salary Band',  amount: 'Above AED 4,000/month',    note: 'Access to enhanced plans',   color: '#0F2D55' },
-                  ] as const).map(({ id, title, subtitle, amount, note, color }) => {
-                    const active = data.salaryBand === id
+                    { id: 'spouse',   label: 'Spouse',   sub: 'Life partner / spouse only',         emoji: '💑' },
+                    { id: 'children', label: 'Children', sub: 'One or more children',                emoji: '👧' },
+                    { id: 'family',   label: 'Family',   sub: 'Spouse + children together',          emoji: '👨‍👩‍👧‍👦' },
+                  ] as const).map(({ id, label, sub, emoji }) => {
+                    const active = data.dependentType === id
                     return (
                       <button key={id} type="button"
-                        onClick={() => { set('salaryBand', id); setTimeout(goNext, 200) }}
-                        className="flex flex-col items-start p-5 rounded-2xl border-2 text-left transition-all hover:-translate-y-0.5"
-                        style={{ borderColor: active ? color : '#E5EAF0', backgroundColor: active ? (id === 'lsb' ? '#F0FDFA' : '#EBF2FA') : 'white' }}>
-                        <div className="flex items-center justify-between w-full mb-3">
-                          <span className="font-display font-extrabold text-[24px]" style={{ color }}>{title}</span>
-                          {active && <CheckCircle2 className="w-5 h-5" style={{ color }} />}
-                        </div>
-                        <div className="font-sans font-bold text-[14px] mb-1" style={{ color: '#0F2D55' }}>{subtitle}</div>
-                        <div className="font-sans text-[13px] mb-3" style={{ color: '#475569' }}>{amount}</div>
-                        <span className="text-[11px] font-sans px-2.5 py-1 rounded-full"
-                          style={{ backgroundColor: active ? color : '#F1F5F9', color: active ? 'white' : '#64748B' }}>{note}</span>
+                        onClick={() => { set('dependentType', id); if (id !== 'children' && id !== 'family') setTimeout(goNext, 200) }}
+                        className="flex flex-col items-center p-6 rounded-2xl border-2 text-center transition-all hover:-translate-y-0.5 gap-2"
+                        style={{ borderColor: active ? '#0D9488' : '#E5EAF0', backgroundColor: active ? '#F0FDFA' : 'white' }}>
+                        <div className="text-4xl">{emoji}</div>
+                        <div className="font-sans font-bold text-[15px]" style={{ color: active ? '#0A7A72' : '#0F2D55' }}>{label}</div>
+                        <div className="font-sans text-[12px]" style={{ color: '#64748B' }}>{sub}</div>
+                        {active && <CheckCircle2 className="w-5 h-5 mt-1" style={{ color: '#0D9488' }} />}
                       </button>
                     )
                   })}
                 </div>
-                <Buttons onNext={goNext} disabled={!data.salaryBand} onBack={goBack} />
+                {/* Children count — shown when children or family is selected */}
+                {(data.dependentType === 'children' || data.dependentType === 'family') && (
+                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                    className="mt-4 bg-white rounded-2xl border p-5" style={{ borderColor: '#E5EAF0' }}>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="font-sans font-bold text-[14px]" style={{ color: '#0F2D55' }}>Number of Children</div>
+                        <div className="font-sans text-[12px]" style={{ color: '#64748B' }}>Up to 8 children</div>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <button type="button" onClick={() => set('dependentChildrenCount', Math.max(1, data.dependentChildrenCount - 1))}
+                          className="w-10 h-10 rounded-xl border-2 flex items-center justify-center text-xl font-bold transition-colors"
+                          style={{ borderColor: '#E5EAF0', color: '#475569' }}>−</button>
+                        <span className="font-display font-bold text-[24px] w-8 text-center" style={{ color: '#0F2D55' }}>{data.dependentChildrenCount}</span>
+                        <button type="button" onClick={() => set('dependentChildrenCount', Math.min(8, data.dependentChildrenCount + 1))}
+                          className="w-10 h-10 rounded-xl border-2 flex items-center justify-center text-xl font-bold transition-colors"
+                          style={{ borderColor: '#0D9488', color: '#0D9488' }}>+</button>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+                <Buttons onNext={goNext} disabled={!data.dependentType} onBack={goBack} />
               </Shell>
             )}
 
-            {/* ══ DEPENDENTS (Dubai + Dependent) ══ */}
-            {step === 'dependents' && (
-              <Shell title="Add Your Dependents" sub="Toggle who should be covered under this policy" icon="👨‍👩‍👧‍👦">
-                <div className="space-y-3">
-                  {[
-                    { key: 'hasSpouse' as const,  label: 'Spouse',  sub: 'Life partner / spouse' },
-                    { key: 'hasParents' as const, label: 'Parents', sub: 'Father and/or mother' },
-                  ].map(({ key, label, sub }) => (
-                    <div key={key} className="bg-white rounded-2xl border overflow-hidden" style={{ borderColor: '#E5EAF0' }}>
-                      <div className="flex items-center justify-between px-4 py-3.5">
-                        <div>
-                          <div className="font-sans font-bold text-[14px]" style={{ color: '#0F2D55' }}>{label}</div>
-                          <div className="font-sans text-[12px]" style={{ color: '#64748B' }}>{sub}</div>
-                        </div>
-                        <button type="button" onClick={() => set(key, !data[key])}
-                          className="relative w-11 h-6 rounded-full transition-all shrink-0"
-                          style={{ backgroundColor: data[key] ? '#0D9488' : '#CBD5E1' }}>
-                          <span className="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all"
-                            style={{ left: data[key] ? '22px' : '2px' }} />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+            {/* ══ DEPENDENT DETAILS ══ */}
+            {step === 'dependent_details' && (
+              <div>
+                <div className="text-center mb-6">
+                  <div className="text-4xl mb-3">📋</div>
+                  <h2 className="font-display font-bold text-[22px] leading-tight mb-1" style={{ color: '#0F2D55' }}>Dependent & Sponsor Details</h2>
+                  <p className="font-sans text-[14px]" style={{ color: '#64748B' }}>Details of the person being insured and the visa sponsor</p>
+                </div>
 
-                  {/* Children counter */}
-                  <div className="bg-white rounded-2xl border" style={{ borderColor: '#E5EAF0' }}>
-                    <div className="flex items-center justify-between px-4 py-3.5">
-                      <div>
-                        <div className="font-sans font-bold text-[14px]" style={{ color: '#0F2D55' }}>Children</div>
-                        <div className="font-sans text-[12px]" style={{ color: '#64748B' }}>Up to 8 children</div>
+                {/* Dependent details */}
+                <div className="bg-white rounded-2xl border p-5 mb-4" style={{ borderColor: '#E5EAF0' }}>
+                  <p className="font-sans font-bold text-[11px] uppercase tracking-widest mb-4" style={{ color: '#94A3B8' }}>
+                    Dependent Details ({data.dependentType === 'spouse' ? 'Spouse' : data.dependentType === 'children' ? 'Child' : 'Primary Dependent'})
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <FormField label="Full Name" required>
+                      <input type="text" value={data.depName} placeholder="Sara Al Mansoori"
+                        onChange={e => set('depName', e.target.value)}
+                        className="w-full h-12 rounded-xl border px-4 font-sans text-[14px] bg-white outline-none"
+                        style={{ borderColor: '#E5EAF0' }} onFocus={foc} onBlur={blu} />
+                    </FormField>
+                    <FormField label="Email Address" required>
+                      <input type="email" value={data.depEmail} placeholder="dependent@example.com"
+                        onChange={e => set('depEmail', e.target.value)}
+                        className="w-full h-12 rounded-xl border px-4 font-sans text-[14px] bg-white outline-none"
+                        style={{ borderColor: '#E5EAF0' }} onFocus={foc} onBlur={blu} />
+                    </FormField>
+                    <FormField label="UAE Mobile" required>
+                      <div className="flex">
+                        <span className="flex items-center px-3.5 border border-r-0 rounded-l-xl font-sans font-semibold text-[13px] shrink-0 h-12"
+                          style={{ borderColor: '#E5EAF0', backgroundColor: '#F4F7FB', color: '#475569' }}>🇦🇪 +971</span>
+                        <input type="tel" value={data.depPhone} placeholder="50 123 4567"
+                          onChange={e => set('depPhone', e.target.value.replace(/\D/g, '').slice(0, 9))}
+                          className="flex-1 h-12 rounded-r-xl border px-4 font-sans text-[14px] bg-white outline-none"
+                          style={{ borderColor: '#E5EAF0' }} onFocus={foc} onBlur={blu} />
                       </div>
-                      <div className="flex items-center gap-3">
-                        <button type="button" onClick={() => set('children', Math.max(0, data.children - 1))}
-                          className="w-9 h-9 rounded-xl border flex items-center justify-center text-xl font-bold transition-colors hover:bg-gray-50"
-                          style={{ borderColor: '#E5EAF0', color: '#475569' }}>−</button>
-                        <span className="font-display font-bold text-[20px] w-7 text-center" style={{ color: '#0F2D55' }}>{data.children}</span>
-                        <button type="button" onClick={() => set('children', Math.min(8, data.children + 1))}
-                          className="w-9 h-9 rounded-xl border flex items-center justify-center text-xl font-bold transition-colors hover:bg-[#F0FDFA]"
-                          style={{ borderColor: data.children < 8 ? '#0D9488' : '#E5EAF0', color: data.children < 8 ? '#0D9488' : '#CBD5E1' }}>+</button>
+                    </FormField>
+                    <FormField label="Nationality" required>
+                      <select value={data.depNationality} onChange={e => set('depNationality', e.target.value)}
+                        className="w-full h-12 rounded-xl border px-4 font-sans text-[14px] bg-white outline-none appearance-none"
+                        style={{ borderColor: '#E5EAF0', color: data.depNationality ? '#0F2D55' : '#94A3B8' }}>
+                        <option value="">Select nationality</option>
+                        {['UAE','Indian','Pakistani','Filipino','Bangladeshi','Egyptian','British','American','Canadian','Other'].map(n => (
+                          <option key={n} value={n}>{n}</option>
+                        ))}
+                      </select>
+                    </FormField>
+                  </div>
+                </div>
+
+                {/* Sponsor details */}
+                <div className="bg-white rounded-2xl border p-5 mb-4" style={{ borderColor: '#E5EAF0' }}>
+                  <p className="font-sans font-bold text-[11px] uppercase tracking-widest mb-4" style={{ color: '#94A3B8' }}>Sponsor Details</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <FormField label="Sponsor Full Name" required>
+                      <input type="text" value={data.sponsorName} placeholder="Mohammed Al Hashimi"
+                        onChange={e => set('sponsorName', e.target.value)}
+                        className="w-full h-12 rounded-xl border px-4 font-sans text-[14px] bg-white outline-none"
+                        style={{ borderColor: '#E5EAF0' }} onFocus={foc} onBlur={blu} />
+                    </FormField>
+                    <FormField label="Sponsor Emirates ID" required>
+                      <input type="text" value={data.sponsorEID} placeholder="784-XXXX-XXXXXXX-X"
+                        onChange={e => set('sponsorEID', e.target.value)}
+                        className="w-full h-12 rounded-xl border px-4 font-sans text-[14px] bg-white outline-none"
+                        style={{ borderColor: '#E5EAF0' }} onFocus={foc} onBlur={blu} />
+                    </FormField>
+                    <FormField label="Sponsor Email" required>
+                      <input type="email" value={data.sponsorEmail} placeholder="sponsor@example.com"
+                        onChange={e => set('sponsorEmail', e.target.value)}
+                        className="w-full h-12 rounded-xl border px-4 font-sans text-[14px] bg-white outline-none"
+                        style={{ borderColor: '#E5EAF0' }} onFocus={foc} onBlur={blu} />
+                    </FormField>
+                    <FormField label="Sponsor UAE Mobile" required>
+                      <div className="flex">
+                        <span className="flex items-center px-3.5 border border-r-0 rounded-l-xl font-sans font-semibold text-[13px] shrink-0 h-12"
+                          style={{ borderColor: '#E5EAF0', backgroundColor: '#F4F7FB', color: '#475569' }}>🇦🇪 +971</span>
+                        <input type="tel" value={data.sponsorPhone} placeholder="50 123 4567"
+                          onChange={e => set('sponsorPhone', e.target.value.replace(/\D/g, '').slice(0, 9))}
+                          className="flex-1 h-12 rounded-r-xl border px-4 font-sans text-[14px] bg-white outline-none"
+                          style={{ borderColor: '#E5EAF0' }} onFocus={foc} onBlur={blu} />
                       </div>
+                    </FormField>
+                    <FormField label="Sponsor Nationality" required>
+                      <select value={data.sponsorNationality} onChange={e => set('sponsorNationality', e.target.value)}
+                        className="w-full h-12 rounded-xl border px-4 font-sans text-[14px] bg-white outline-none appearance-none"
+                        style={{ borderColor: '#E5EAF0', color: data.sponsorNationality ? '#0F2D55' : '#94A3B8' }}>
+                        <option value="">Select nationality</option>
+                        {['UAE','Indian','Pakistani','Filipino','Bangladeshi','Egyptian','British','American','Canadian','Other'].map(n => (
+                          <option key={n} value={n}>{n}</option>
+                        ))}
+                      </select>
+                    </FormField>
+                  </div>
+                  {/* Sponsor salary band */}
+                  <div className="mt-4 pt-4 border-t" style={{ borderColor: '#E5EAF0' }}>
+                    <p className="font-sans font-bold text-[12px] mb-3" style={{ color: '#475569' }}>Sponsor Monthly Salary Band</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      {([
+                        { id: 'lsb',  title: 'LSB',  subtitle: 'Up to AED 4,000/month',   color: '#0D9488' },
+                        { id: 'nlsb', title: 'NLSB', subtitle: 'Above AED 4,000/month',   color: '#0F2D55' },
+                      ] as const).map(({ id, title, subtitle, color }) => {
+                        const active = data.sponsorSalaryBand === id
+                        return (
+                          <button key={id} type="button" onClick={() => set('sponsorSalaryBand', id)}
+                            className="flex items-center justify-between p-3.5 rounded-xl border-2 transition-all"
+                            style={{ borderColor: active ? color : '#E5EAF0', backgroundColor: active ? (id === 'lsb' ? '#F0FDFA' : '#EBF2FA') : 'white' }}>
+                            <div>
+                              <div className="font-display font-extrabold text-[18px]" style={{ color }}>{title}</div>
+                              <div className="font-sans text-[11px]" style={{ color: '#64748B' }}>{subtitle}</div>
+                            </div>
+                            {active && <CheckCircle2 className="w-4 h-4 shrink-0" style={{ color }} />}
+                          </button>
+                        )
+                      })}
                     </div>
                   </div>
                 </div>
-                <Buttons onNext={goNext} disabled={false} onBack={goBack} nextLabel="View Plans" />
-              </Shell>
+                <Buttons onNext={goNext}
+                  disabled={!data.depName || !data.depEmail || !data.depPhone || !data.depNationality ||
+                            !data.sponsorName || !data.sponsorEmail || !data.sponsorPhone || !data.sponsorNationality || !data.sponsorSalaryBand}
+                  onBack={goBack} nextLabel="View Plans" />
+              </div>
             )}
 
             {/* ══ PLAN TYPE ══ */}
@@ -487,8 +684,8 @@ export default function HealthQuoteFlow() {
                   <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full mb-3 font-sans font-semibold text-[12px]"
                     style={{ backgroundColor: '#F0FDFA', color: '#0D9488', border: '1px solid #CCFBF1' }}>
                     Plans for {emirateName[data.emirate] ?? data.emirate}
-                    {isDubai && data.salaryBand ? ` · ${data.salaryBand.toUpperCase()}` : ''}
-                    {isDubai && data.memberType ? ` · ${data.memberType === 'self' ? 'Self' : 'Family'}` : ''}
+                    {isDubai && getSalaryBand(data) ? ` · ${getSalaryBand(data).toUpperCase()}` : ''}
+                    {isDubai && data.memberType ? ` · ${data.memberType === 'self' ? 'Self' : 'Dependent'}` : ''}
                   </div>
                   <h2 className="font-display font-bold text-[24px] mb-1" style={{ color: '#0F2D55' }}>Select Your Plan</h2>
                   <p className="font-sans text-[14px]" style={{ color: '#64748B' }}>
@@ -514,14 +711,14 @@ export default function HealthQuoteFlow() {
                               Basic Plan
                             </h3>
                             <p className="font-sans text-[12px]" style={{ color: '#64748B' }}>
-                              {data.salaryBand === 'lsb' ? 'Neuron / RSA' : 'ADNIC / Sukoon'}
+                              {getSalaryBand(data) === 'lsb' ? 'Neuron / RSA' : 'ADNIC / Sukoon'}
                             </p>
                           </div>
                           {data.planType === 'basic' && <CheckCircle2 className="w-5 h-5 mt-1" style={{ color: '#0D9488' }} />}
                         </div>
                         <div className="py-3 border-y mb-3" style={{ borderColor: '#E5EAF0' }}>
                           <div className="font-display font-extrabold text-[28px] leading-none" style={{ color: '#0F2D55' }}>
-                            AED {(data.salaryBand === 'lsb' ? DUBAI_BASIC_LSB.premium : DUBAI_BASIC_NLSB.premium).toLocaleString()}
+                            AED {(getSalaryBand(data) === 'lsb' ? DUBAI_BASIC_LSB.premium : DUBAI_BASIC_NLSB.premium).toLocaleString()}
                           </div>
                           <div className="font-sans text-[11px] mt-0.5" style={{ color: '#64748B' }}>per year · fixed</div>
                         </div>
@@ -574,7 +771,7 @@ export default function HealthQuoteFlow() {
                         </div>
                         <div className="py-3 border-y mb-3" style={{ borderColor: '#E5EAF0' }}>
                           <div className="font-display font-extrabold text-[28px] leading-none" style={{ color: '#0F2D55' }}>
-                            AED {(data.salaryBand === 'lsb' ? DUBAI_ENHANCED_BASE_LSB : DUBAI_ENHANCED_BASE_NLSB).toLocaleString()}+
+                            AED {(getSalaryBand(data) === 'lsb' ? DUBAI_ENHANCED_BASE_LSB : DUBAI_ENHANCED_BASE_NLSB).toLocaleString()}+
                           </div>
                           <div className="font-sans text-[11px] mt-0.5" style={{ color: '#64748B' }}>starting from · you choose coverage</div>
                         </div>
@@ -791,7 +988,7 @@ export default function HealthQuoteFlow() {
 
             {/* ══ CHECKOUT (contact + payment) ══ */}
             {step === 'checkout' && (
-              <CheckoutStep data={data} set={set} totalPremium={totalPremium} basePremium={basePremium}
+              <CheckoutStep data={data} totalPremium={totalPremium}
                 emirateName={emirateName} isDubai={isDubai} onBack={goBack} router={router} />
             )}
 
@@ -813,11 +1010,9 @@ export default function HealthQuoteFlow() {
 }
 
 /* ─── Checkout step ──────────────────────────────────────── */
-function CheckoutStep({ data, set, totalPremium, basePremium, emirateName, isDubai, onBack, router }: {
+function CheckoutStep({ data, totalPremium, emirateName, isDubai, onBack, router }: {
   data: QuoteData
-  set: <K extends keyof QuoteData>(k: K, v: QuoteData[K]) => void
   totalPremium: number
-  basePremium: number
   emirateName: Record<string, string>
   isDubai: boolean
   onBack: () => void
@@ -827,7 +1022,13 @@ function CheckoutStep({ data, set, totalPremium, basePremium, emirateName, isDub
   const stamp = 750
   const total = totalPremium + stamp
   const monthly = Math.round(total / 12)
-  const valid = data.name.length > 1 && data.email.includes('@') && data.mobile.length >= 8
+
+  const contactEmail = data.memberType === 'dependent' ? data.sponsorEmail : data.selfEmail
+  const contactName  = data.memberType === 'dependent' ? data.sponsorName  : data.selfName
+
+  const planLabel = isDubai
+    ? (data.planType === 'basic' ? 'Basic DHA Plan' : 'Enhanced Plan')
+    : (data.planType ? data.planType.charAt(0).toUpperCase() + data.planType.slice(1) + ' Plan' : 'Plan')
 
   if (paid) {
     return (
@@ -839,7 +1040,8 @@ function CheckoutStep({ data, set, totalPremium, basePremium, emirateName, isDub
         </div>
         <h2 className="font-display font-bold text-[22px] mb-2" style={{ color: '#0F2D55' }}>Policy Confirmed!</h2>
         <p className="font-sans text-[14px] mb-2" style={{ color: '#64748B' }}>
-          Your DHA-compliant health insurance certificate will be emailed to <strong>{data.email}</strong> within 24 hours.
+          Your DHA-compliant health insurance certificate will be emailed to{' '}
+          <strong>{contactEmail || 'your email'}</strong> within 24 hours.
         </p>
         <p className="font-sans font-bold text-[15px] mb-6" style={{ color: '#0D9488' }}>
           AED {total.toLocaleString()} charged successfully
@@ -853,77 +1055,74 @@ function CheckoutStep({ data, set, totalPremium, basePremium, emirateName, isDub
     )
   }
 
-  const planLabel = isDubai
-    ? (data.planType === 'basic' ? 'Basic DHA Plan' : 'Enhanced Plan')
-    : (data.planType ? data.planType.charAt(0).toUpperCase() + data.planType.slice(1) + ' Plan' : 'Plan')
-
   return (
     <div>
       <div className="text-center mb-6">
         <div className="text-4xl mb-3">🛒</div>
-        <h2 className="font-display font-bold text-[24px] mb-1" style={{ color: '#0F2D55' }}>Complete Your Purchase</h2>
-        <p className="font-sans text-[14px]" style={{ color: '#64748B' }}>Enter your details and pay securely to get your policy certificate</p>
+        <h2 className="font-display font-bold text-[24px] mb-1" style={{ color: '#0F2D55' }}>Review & Pay</h2>
+        <p className="font-sans text-[14px]" style={{ color: '#64748B' }}>Confirm your details and complete payment securely</p>
       </div>
 
       {/* Plan summary bar */}
-      <div className="mb-5 rounded-2xl p-4 flex items-center justify-between"
+      <div className="mb-5 rounded-2xl p-5 flex items-center justify-between"
         style={{ background: 'linear-gradient(135deg,#0F2D55,#0D9488)' }}>
         <div>
-          <div className="font-sans text-[11px] font-semibold text-white/60 mb-0.5">{emirateName[data.emirate] ?? ''}</div>
-          <div className="font-display font-extrabold text-[18px] text-white">{planLabel}</div>
+          <div className="font-sans text-[11px] font-semibold text-white/60 mb-0.5">{emirateName[data.emirate] ?? ''} · {data.memberType === 'self' ? 'Self' : 'Dependent'}</div>
+          <div className="font-display font-extrabold text-[20px] text-white">{planLabel}</div>
         </div>
         <div className="text-right">
-          <div className="font-display font-extrabold text-[24px] text-white leading-none">
+          <div className="font-display font-extrabold text-[26px] text-white leading-none">
             AED {total.toLocaleString()}
           </div>
           <div className="font-sans text-[11px] text-white/60">incl. stamp duty</div>
         </div>
       </div>
 
-      {/* Contact form */}
+      {/* Policy holder summary */}
       <div className="bg-white rounded-2xl border p-5 mb-4" style={{ borderColor: '#E5EAF0' }}>
-        <p className="font-sans font-bold text-[12px] uppercase tracking-widest mb-4" style={{ color: '#94A3B8' }}>
-          Your Details
+        <p className="font-sans font-bold text-[11px] uppercase tracking-widest mb-4" style={{ color: '#94A3B8' }}>
+          {data.memberType === 'self' ? 'Policy Holder' : 'Dependent & Sponsor'}
         </p>
-        <div className="space-y-4">
-          <div>
-            <label className="block font-sans font-semibold text-[12px] mb-1.5" style={{ color: '#475569' }}>Full name</label>
-            <input type="text" value={data.name} placeholder="Ahmed Al Mansoori"
-              onChange={e => set('name', e.target.value)}
-              className="w-full h-12 rounded-xl border px-4 font-sans text-[14px] bg-white outline-none"
-              style={{ borderColor: '#E5EAF0' }}
-              onFocus={foc} onBlur={blu} />
+        {data.memberType === 'self' ? (
+          <div className="grid grid-cols-2 gap-3 text-[13px]">
+            <SummaryRow label="Name"        value={data.selfName} />
+            <SummaryRow label="EID"         value={data.selfEID || '—'} />
+            <SummaryRow label="Email"       value={data.selfEmail} />
+            <SummaryRow label="Mobile"      value={`+971 ${data.selfPhone}`} />
+            <SummaryRow label="Nationality" value={data.selfNationality} />
+            <SummaryRow label="Salary Band" value={data.selfSalaryBand.toUpperCase()} />
           </div>
-          <div>
-            <label className="block font-sans font-semibold text-[12px] mb-1.5" style={{ color: '#475569' }}>Email address</label>
-            <input type="email" value={data.email} placeholder="you@example.com"
-              onChange={e => set('email', e.target.value)}
-              className="w-full h-12 rounded-xl border px-4 font-sans text-[14px] bg-white outline-none"
-              style={{ borderColor: '#E5EAF0' }}
-              onFocus={foc} onBlur={blu} />
-          </div>
-          <div>
-            <label className="block font-sans font-semibold text-[12px] mb-1.5" style={{ color: '#475569' }}>UAE mobile</label>
-            <div className="flex">
-              <span className="flex items-center px-3.5 border border-r-0 rounded-l-xl font-sans font-semibold text-[13px] shrink-0"
-                style={{ borderColor: '#E5EAF0', backgroundColor: '#F4F7FB', color: '#475569' }}>
-                🇦🇪 +971
-              </span>
-              <input type="tel" value={data.mobile} placeholder="50 123 4567"
-                onChange={e => set('mobile', e.target.value.replace(/\D/g, '').slice(0, 9))}
-                className="flex-1 h-12 rounded-r-xl border px-4 font-sans text-[14px] bg-white outline-none"
-                style={{ borderColor: '#E5EAF0' }}
-                onFocus={foc} onBlur={blu} />
+        ) : (
+          <div className="space-y-4">
+            <div>
+              <p className="font-sans text-[11px] font-semibold mb-2" style={{ color: '#64748B' }}>
+                Dependent ({data.dependentType})
+              </p>
+              <div className="grid grid-cols-2 gap-3 text-[13px]">
+                <SummaryRow label="Name"        value={data.depName} />
+                <SummaryRow label="Email"       value={data.depEmail} />
+                <SummaryRow label="Mobile"      value={`+971 ${data.depPhone}`} />
+                <SummaryRow label="Nationality" value={data.depNationality} />
+              </div>
+            </div>
+            <div className="pt-4 border-t" style={{ borderColor: '#E5EAF0' }}>
+              <p className="font-sans text-[11px] font-semibold mb-2" style={{ color: '#64748B' }}>Sponsor</p>
+              <div className="grid grid-cols-2 gap-3 text-[13px]">
+                <SummaryRow label="Name"        value={data.sponsorName} />
+                <SummaryRow label="EID"         value={data.sponsorEID || '—'} />
+                <SummaryRow label="Email"       value={data.sponsorEmail} />
+                <SummaryRow label="Mobile"      value={`+971 ${data.sponsorPhone}`} />
+                <SummaryRow label="Nationality" value={data.sponsorNationality} />
+                <SummaryRow label="Salary Band" value={data.sponsorSalaryBand.toUpperCase()} />
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Payment summary */}
       <div className="bg-white rounded-2xl border p-5 mb-4" style={{ borderColor: '#E5EAF0' }}>
-        <p className="font-sans font-bold text-[12px] uppercase tracking-widest mb-4" style={{ color: '#94A3B8' }}>
-          Payment Summary
-        </p>
+        <p className="font-sans font-bold text-[11px] uppercase tracking-widest mb-4" style={{ color: '#94A3B8' }}>Payment Summary</p>
         <div className="space-y-2 font-sans text-[13.5px]">
           <div className="flex justify-between">
             <span style={{ color: '#64748B' }}>Annual premium</span>
@@ -944,21 +1143,19 @@ function CheckoutStep({ data, set, totalPremium, basePremium, emirateName, isDub
         </div>
       </div>
 
-      <div className="flex items-start gap-2 p-3 rounded-xl mb-5" style={{ backgroundColor: '#F0FDFA' }}>
+      <div className="flex items-start gap-2 p-3.5 rounded-xl mb-5" style={{ backgroundColor: '#F0FDFA' }}>
         <Shield className="w-4 h-4 shrink-0 mt-0.5" style={{ color: '#0D9488' }} />
         <p className="font-sans text-[12px]" style={{ color: '#0A7A72' }}>
-          Secure checkout. IA-licensed. DHA-compliant certificate issued within 24 hours.
+          Secure payment. IA-licensed. DHA-compliant certificate emailed to <strong>{contactName || 'you'}</strong> within 24 hours.
         </p>
       </div>
 
-      <button type="button" disabled={!valid} onClick={() => valid && setPaid(true)}
-        className={cn('w-full h-14 rounded-xl font-sans font-extrabold text-[16px] text-white flex items-center justify-center gap-3 transition-all mb-3',
-          valid ? 'hover:opacity-90 hover:shadow-xl hover:-translate-y-0.5' : 'opacity-50 cursor-not-allowed')}
+      <button type="button" onClick={() => setPaid(true)}
+        className="w-full h-14 rounded-xl font-sans font-extrabold text-[16px] text-white flex items-center justify-center gap-3 transition-all mb-3 hover:opacity-90 hover:shadow-xl hover:-translate-y-0.5"
         style={{ background: 'linear-gradient(135deg,#0F2D55,#0D9488)' }}>
         Pay AED {total.toLocaleString()} Securely
         <ArrowRight className="w-5 h-5" />
       </button>
-      {!valid && <p className="text-center font-sans text-[12px] mb-3" style={{ color: '#94A3B8' }}>Please fill in all contact details above</p>}
       <button type="button" onClick={onBack}
         className="w-full h-11 rounded-xl border font-sans font-medium text-[13.5px] flex items-center justify-center gap-2 transition-colors hover:bg-[#F4F7FB]"
         style={{ borderColor: '#E5EAF0', color: '#64748B' }}>
@@ -1058,6 +1255,26 @@ function BenefitRow({ label, value, custom }: { label: string; value: string; cu
       <span className="font-sans text-[11.5px] shrink-0" style={{ color: '#64748B' }}>{label}</span>
       <span className="font-sans font-semibold text-[11.5px] ml-auto text-right"
         style={{ color: custom ? '#D4A24B' : '#0F2D55' }}>{value}</span>
+    </div>
+  )
+}
+
+function FormField({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
+  return (
+    <div>
+      <label className="block font-sans font-semibold text-[12px] mb-1.5" style={{ color: '#475569' }}>
+        {label}{required && <span className="text-red-400 ml-0.5">*</span>}
+      </label>
+      {children}
+    </div>
+  )
+}
+
+function SummaryRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <div className="font-sans text-[11px]" style={{ color: '#94A3B8' }}>{label}</div>
+      <div className="font-sans font-semibold text-[13px] truncate" style={{ color: '#0F2D55' }}>{value || '—'}</div>
     </div>
   )
 }
