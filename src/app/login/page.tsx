@@ -3,14 +3,37 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Eye, EyeOff, ArrowRight, Shield, CheckCircle2, Clock } from 'lucide-react'
+import { Eye, EyeOff, ArrowRight, CheckCircle2 } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
-import Logo from '@/components/ui/Logo'
 
-const brandPoints = [
-  { icon: Shield,       text: 'IA licensed & regulated insurers only' },
-  { icon: CheckCircle2, text: 'DHA & HAAD compliant certificates' },
-  { icon: Clock,        text: 'Claims tracked in real-time' },
+/* Floating background blobs */
+function Blobs() {
+  return (
+    <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden>
+      <div className="absolute -top-32 -left-32 w-[520px] h-[520px] rounded-full opacity-[0.18]"
+        style={{ background: 'radial-gradient(circle, #0D9488 0%, transparent 70%)' }} />
+      <div className="absolute top-1/3 -right-24 w-[380px] h-[380px] rounded-full opacity-[0.12]"
+        style={{ background: 'radial-gradient(circle, #D4A24B 0%, transparent 70%)' }} />
+      <div className="absolute -bottom-20 left-1/4 w-[440px] h-[440px] rounded-full opacity-[0.10]"
+        style={{ background: 'radial-gradient(circle, #0F2D55 0%, transparent 70%)' }} />
+      {/* Grid overlay */}
+      <svg className="absolute inset-0 w-full h-full opacity-[0.04]">
+        <defs>
+          <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" strokeWidth="0.8"/>
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#grid)" />
+      </svg>
+    </div>
+  )
+}
+
+const TRUST_POINTS = [
+  'IA licensed & regulated insurers only',
+  'DHA & HAAD compliant certificates',
+  'Claims tracked in real-time',
+  'Instant digital policy issuance',
 ]
 
 export default function LoginPage() {
@@ -30,7 +53,7 @@ export default function LoginPage() {
     setError('')
     const result = await login(email, password)
     if (!result.success) {
-      setError(result.error ?? 'Login failed. Please check your credentials.')
+      setError(result.error ?? 'Invalid email or password.')
     } else {
       router.push('/dashboard')
     }
@@ -42,214 +65,140 @@ export default function LoginPage() {
     setError('')
   }
 
-  const inputBase = "w-full h-12 rounded-xl border px-4 font-sans text-[14px] bg-white outline-none transition-all"
+  const inp = "w-full h-12 rounded-xl border px-4 font-sans text-[14px] bg-white/5 text-white outline-none transition-all placeholder:text-white/30"
 
   return (
-    <div className="min-h-screen flex" style={{ backgroundColor: 'var(--page-bg)' }}>
+    <div className="min-h-screen flex items-center justify-center px-4 py-12 relative"
+      style={{ background: 'linear-gradient(135deg, #060F1E 0%, #0A1A30 50%, #0B2540 100%)' }}>
+      <Blobs />
 
-      {/* ── Left brand panel ── */}
-      <div
-        className="hidden lg:flex flex-col justify-between w-[400px] xl:w-[460px] shrink-0 p-10 relative overflow-hidden"
-        style={{ background: 'linear-gradient(160deg, var(--navy-950) 0%, var(--navy-800) 60%, #0B3D6B 100%)' }}
+      <motion.div
+        initial={{ opacity: 0, y: 24 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+        className="relative z-10 w-full max-w-[420px]"
       >
-        {/* Background circles */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute -top-24 -right-24 w-64 h-64 rounded-full opacity-[0.07]" style={{ background: 'radial-gradient(circle, var(--teal-400), transparent 70%)' }} />
-          <div className="absolute -bottom-16 -left-16 w-52 h-52 rounded-full opacity-[0.05]" style={{ background: 'radial-gradient(circle, var(--gold-400), transparent 70%)' }} />
-        </div>
-
-        {/* Logo */}
-        <Logo size={36} textColor="white" />
-
-        {/* Copy */}
-        <div className="relative">
-          <div
-            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full font-sans font-semibold text-[11px] mb-5"
-            style={{ backgroundColor: 'rgba(212,162,75,0.2)', color: 'var(--gold-400)' }}
-          >
-            UAE's #1 health insurance platform
+        {/* Logo mark */}
+        <div className="flex items-center gap-3 mb-8">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+            style={{ background: 'linear-gradient(135deg,#0D9488,#0F7A72)' }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.35C17.25 22.15 21 17.25 21 12V7L12 2z" fill="white" fillOpacity="0.9"/>
+            </svg>
           </div>
-          <h2 className="font-display font-extrabold text-white text-[34px] leading-[1.1] tracking-tight mb-4">
-            Your insurance,<br />all in one place.
-          </h2>
-          <p className="font-sans text-[14px] leading-relaxed mb-8" style={{ color: 'var(--navy-200)' }}>
-            View policies, track claims, download DHA-compliant certificates, and renew cover — all without a single phone call.
-          </p>
-          <div className="space-y-3.5">
-            {brandPoints.map(({ icon: Icon, text }) => (
-              <div key={text} className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: 'rgba(13,148,136,0.25)' }}>
-                  <Icon className="w-4 h-4" style={{ color: 'var(--teal-400)' }} />
-                </div>
-                <span className="font-sans text-[13.5px]" style={{ color: 'var(--navy-200)' }}>{text}</span>
-              </div>
-            ))}
+          <div>
+            <span className="font-display font-extrabold text-[20px] text-white tracking-tight">InsureAE</span>
+            <span className="block font-sans text-[11px]" style={{ color: '#0D9488' }}>UAE&rsquo;s health insurance platform</span>
           </div>
         </div>
 
-        <p className="relative font-sans text-[11px]" style={{ color: 'var(--navy-500)' }}>
-          © {new Date().getFullYear()} InsureAE Technologies LLC · IA Lic. No. LIC/INS/2024/0042
-        </p>
-      </div>
+        {/* Card */}
+        <div className="rounded-2xl border p-8"
+          style={{ backgroundColor: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(20px)' }}>
 
-      {/* ── Right form panel ── */}
-      <div className="flex-1 flex flex-col items-center justify-center px-5 py-12">
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35 }}
-          className="w-full max-w-[400px]"
-        >
-          {/* Mobile logo */}
-          <div className="lg:hidden mb-8">
-            <Logo size={32} />
-          </div>
-
-          <h1 className="font-display font-extrabold text-[28px] tracking-tight mb-1" style={{ color: 'var(--navy-900)' }}>
+          <h1 className="font-display font-extrabold text-[28px] text-white leading-tight mb-1">
             Welcome back
           </h1>
-          <p className="font-sans text-[14px] mb-7" style={{ color: 'var(--text-muted)' }}>
-            Sign in to your InsureAE account
+          <p className="font-sans text-[14px] mb-7" style={{ color: 'rgba(255,255,255,0.45)' }}>
+            Sign in to manage your policies
           </p>
 
-          {/* Demo accounts */}
-          <div
-            className="mb-6 p-3.5 rounded-xl border"
-            style={{ backgroundColor: 'var(--navy-50)', borderColor: 'var(--navy-100)' }}
-          >
-            <p className="font-sans font-semibold text-[11.5px] mb-2.5" style={{ color: 'var(--navy-700)' }}>
-              Demo accounts — click to autofill
-            </p>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => fillDemo('customer')}
-                className="flex-1 py-2 rounded-lg border font-sans font-semibold text-[12px] transition-all hover:bg-white hover:shadow-sm"
-                style={{ borderColor: 'var(--border-medium)', color: 'var(--navy-700)' }}
-              >
-                Customer
+          {/* Demo autofill */}
+          <div className="flex gap-2 mb-6">
+            {(['customer', 'admin'] as const).map(type => (
+              <button key={type} type="button" onClick={() => fillDemo(type)}
+                className="flex-1 py-2 rounded-lg font-sans font-semibold text-[12px] transition-all hover:opacity-80"
+                style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)', color: 'rgba(255,255,255,0.55)' }}>
+                Demo {type}
               </button>
-              <button
-                type="button"
-                onClick={() => fillDemo('admin')}
-                className="flex-1 py-2 rounded-lg border font-sans font-semibold text-[12px] transition-all hover:bg-white hover:shadow-sm"
-                style={{ borderColor: 'var(--border-medium)', color: 'var(--navy-700)' }}
-              >
-                Admin
-              </button>
-            </div>
-          </div>
-
-          {/* Google SSO */}
-          <button
-            type="button"
-            className="w-full h-12 rounded-xl border font-sans font-medium text-[14px] flex items-center justify-center gap-3 mb-4 hover:bg-[var(--surface-raised)] transition-colors"
-            style={{ borderColor: 'var(--border-medium)', color: 'var(--text-primary)' }}
-          >
-            <svg viewBox="0 0 24 24" width="18" height="18">
-              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-            </svg>
-            Continue with Google
-          </button>
-
-          <div className="flex items-center gap-3 mb-5">
-            <div className="flex-1 h-px" style={{ backgroundColor: 'var(--border-subtle)' }} />
-            <span className="font-sans text-[12px]" style={{ color: 'var(--text-subtle)' }}>or sign in with email</span>
-            <div className="flex-1 h-px" style={{ backgroundColor: 'var(--border-subtle)' }} />
+            ))}
           </div>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div>
-              <label className="block font-sans font-semibold text-[12px] mb-1.5" style={{ color: 'var(--text-secondary)' }}>
+              <label className="block font-sans font-semibold text-[12px] mb-1.5" style={{ color: 'rgba(255,255,255,0.5)' }}>
                 Email address
               </label>
-              <input
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                required
-                placeholder="you@example.com"
-                className={inputBase}
-                style={{ borderColor: 'var(--border-medium)', color: 'var(--text-primary)' }}
-                onFocus={e => { e.currentTarget.style.borderColor = 'var(--teal-600)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(13,148,136,0.12)' }}
-                onBlur={e => { e.currentTarget.style.borderColor = 'var(--border-medium)'; e.currentTarget.style.boxShadow = 'none' }}
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+                required placeholder="you@example.com"
+                className={inp}
+                style={{ borderColor: 'rgba(255,255,255,0.12)' }}
+                onFocus={e => { e.currentTarget.style.borderColor = '#0D9488'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(13,148,136,0.20)' }}
+                onBlur={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'; e.currentTarget.style.boxShadow = 'none' }}
               />
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="font-sans font-semibold text-[12px]" style={{ color: 'var(--text-secondary)' }}>Password</label>
-                <Link href="/forgot-password" className="font-sans text-[12px] hover:underline" style={{ color: 'var(--teal-600)' }}>
+                <label className="font-sans font-semibold text-[12px]" style={{ color: 'rgba(255,255,255,0.5)' }}>Password</label>
+                <Link href="/forgot-password" className="font-sans text-[12px] transition-colors hover:text-white" style={{ color: '#0D9488' }}>
                   Forgot password?
                 </Link>
               </div>
               <div className="relative">
-                <input
-                  type={showPw ? 'text' : 'password'}
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  required
-                  placeholder="Enter your password"
-                  className={`${inputBase} pr-12`}
-                  style={{ borderColor: 'var(--border-medium)', color: 'var(--text-primary)' }}
-                  onFocus={e => { e.currentTarget.style.borderColor = 'var(--teal-600)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(13,148,136,0.12)' }}
-                  onBlur={e => { e.currentTarget.style.borderColor = 'var(--border-medium)'; e.currentTarget.style.boxShadow = 'none' }}
+                <input type={showPw ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)}
+                  required placeholder="Enter your password"
+                  className={`${inp} pr-12`}
+                  style={{ borderColor: 'rgba(255,255,255,0.12)' }}
+                  onFocus={e => { e.currentTarget.style.borderColor = '#0D9488'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(13,148,136,0.20)' }}
+                  onBlur={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'; e.currentTarget.style.boxShadow = 'none' }}
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPw(p => !p)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
-                >
+                <button type="button" onClick={() => setShowPw(p => !p)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 transition-colors"
+                  style={{ color: 'rgba(255,255,255,0.35)' }}>
                   {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
             </div>
 
             {error && (
-              <motion.p
-                initial={{ opacity: 0, y: -4 }}
-                animate={{ opacity: 1, y: 0 }}
+              <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
                 className="font-sans text-[13px] px-4 py-2.5 rounded-xl"
-                style={{ backgroundColor: 'var(--error-bg)', color: 'var(--error)' }}
-              >
+                style={{ backgroundColor: 'rgba(239,68,68,0.12)', color: '#FCA5A5', border: '1px solid rgba(239,68,68,0.20)' }}>
                 {error}
               </motion.p>
             )}
 
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full h-12 rounded-xl font-sans font-bold text-[14px] text-white flex items-center justify-center gap-2 transition-all disabled:opacity-60 hover:opacity-90 hover:shadow-lg mt-1"
-              style={{ background: 'linear-gradient(135deg, var(--navy-800) 0%, var(--teal-600) 100%)' }}
-            >
+            <button type="submit" disabled={isLoading}
+              className="w-full h-12 rounded-xl font-sans font-bold text-[14px] text-white flex items-center justify-center gap-2 transition-all mt-1 disabled:opacity-60 hover:brightness-110 hover:shadow-lg hover:-translate-y-0.5"
+              style={{ background: 'linear-gradient(135deg, #0D9488 0%, #0A7A72 100%)' }}>
               {isLoading ? (
-                <motion.span
-                  className="w-5 h-5 rounded-full border-2 border-white/30 border-t-white"
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
-                />
+                <motion.span className="w-5 h-5 rounded-full border-2 border-white/30 border-t-white"
+                  animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }} />
               ) : (
                 <>Sign in <ArrowRight className="w-4 h-4" /></>
               )}
             </button>
           </form>
 
-          <p className="font-sans text-[13px] text-center mt-5" style={{ color: 'var(--text-muted)' }}>
-            Don&apos;t have an account?{' '}
-            <Link href="/register" className="font-semibold hover:underline" style={{ color: 'var(--teal-600)' }}>
-              Create one free
-            </Link>
-          </p>
-          <div className="mt-3 text-center">
-            <Link href="/" className="font-sans text-[12px] hover:underline" style={{ color: 'var(--text-subtle)' }}>
-              ← Continue without account
+          <div className="mt-6 pt-5 border-t flex items-center justify-between" style={{ borderColor: 'rgba(255,255,255,0.07)' }}>
+            <p className="font-sans text-[13px]" style={{ color: 'rgba(255,255,255,0.35)' }}>
+              No account?{' '}
+              <Link href="/register" className="font-semibold transition-colors hover:text-white" style={{ color: '#0D9488' }}>
+                Register free
+              </Link>
+            </p>
+            <Link href="/" className="font-sans text-[12px] transition-colors hover:text-white"
+              style={{ color: 'rgba(255,255,255,0.25)' }}>
+              ← Home
             </Link>
           </div>
-        </motion.div>
-      </div>
+        </div>
+
+        {/* Trust points below card */}
+        <div className="mt-6 grid grid-cols-2 gap-2.5">
+          {TRUST_POINTS.map(pt => (
+            <div key={pt} className="flex items-start gap-2">
+              <CheckCircle2 className="w-3.5 h-3.5 shrink-0 mt-0.5" style={{ color: '#0D9488' }} />
+              <span className="font-sans text-[11.5px] leading-snug" style={{ color: 'rgba(255,255,255,0.35)' }}>{pt}</span>
+            </div>
+          ))}
+        </div>
+
+        <p className="text-center mt-6 font-sans text-[11px]" style={{ color: 'rgba(255,255,255,0.18)' }}>
+          © {new Date().getFullYear()} InsureAE Technologies LLC · IA Lic. No. LIC/INS/2024/0042
+        </p>
+      </motion.div>
     </div>
   )
 }
