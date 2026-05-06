@@ -73,7 +73,7 @@ export default function PoliciesPage() {
         {shown.length === 0 && (
           <div className="text-center py-16 rounded-2xl border" style={{ backgroundColor: 'white', borderColor: 'var(--border-default)' }}>
             <p className="font-sans text-[15px]" style={{ color: 'var(--text-muted)' }}>No policies in this category.</p>
-            <Link href="/quote/motor" className="inline-block mt-3 font-sans font-semibold text-[14px] hover:underline" style={{ color: 'var(--green-700)' }}>
+            <Link href="/quote/health" className="inline-block mt-3 font-sans font-semibold text-[14px] hover:underline" style={{ color: '#0D9488' }}>
               Get a new quote →
             </Link>
           </div>

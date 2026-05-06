@@ -100,14 +100,14 @@ An expired DHA certificate is treated the same as no insurance at all. Renew at 
     `.trim(),
   },
   {
-    slug: 'travel-insurance-schengen-visa-nigeria',
+    slug: 'travel-insurance-schengen-visa-uae',
     title: 'Travel Insurance for Schengen Visa: What UAEs Need to Know',
     excerpt:
       'EU embassies require minimum €30,000 medical cover. We explain exactly what to buy, what to avoid, and the cheapest compliant options from UAE.',
     category: 'Travel',
     readTime: 8,
     publishedAt: '2025-03-28',
-    author: { name: 'Amara Eze', role: 'Travel & Insurance Writer' },
+    author: { name: 'Sara Al Nuaimi', role: 'Travel & Insurance Writer' },
     coverEmoji: '✈️',
     tags: ['Schengen travel insurance', 'EU visa UAE', 'travel insurance Dubai'],
     content: `
@@ -141,14 +141,14 @@ All travel plans on InsureAE are Schengen-compliant and issued in under 5 minute
     `.trim(),
   },
   {
-    slug: 'hmo-vs-health-insurance-nigeria',
+    slug: 'hmo-vs-health-insurance-uae',
     title: "HMO vs Health Insurance in UAE: What's the Real Difference?",
     excerpt:
       'Confused by HMO, NHIS, and private health insurance? This plain-language guide explains which is right for your family or business.',
     category: 'Medical',
     readTime: 6,
     publishedAt: '2025-03-14',
-    author: { name: 'Dr. Yemi Adeyemi', role: 'Healthcare Finance Contributor' },
+    author: { name: 'Dr. Rania Al Farsi', role: 'Healthcare Finance Contributor' },
     coverEmoji: '❤️',
     tags: ['HMO UAE', 'health insurance UAE', 'NHIS', 'medical cover'],
     content: `
@@ -180,20 +180,20 @@ All medical plans listed on InsureAE are from IA-licensed HMOs. You can compare 
     `.trim(),
   },
   {
-    slug: 'business-insurance-nigeria-sme-guide',
+    slug: 'business-insurance-uae-sme-guide',
     title: 'Business Insurance in UAE: The Complete Guide for SMEs',
     excerpt:
       "Fire, theft, liability, employee injury — UAE SMEs face real risks but most have zero cover. Here's what you need and how to get it affordably.",
     category: 'Business',
     readTime: 9,
     publishedAt: '2025-02-27',
-    author: { name: 'Kola Fashola', role: 'SME Finance Writer' },
+    author: { name: 'Khalid Al Hamdan', role: 'SME Finance Writer' },
     coverEmoji: '🏢',
     tags: ['business insurance UAE', 'SME insurance', 'fire insurance Dubai', 'liability cover'],
     content: `
 ## Why most UAE SMEs have no cover — and why that's changing
 
-A 2024 survey by the NIA found that fewer than 12% of UAE SMEs carry any form of business insurance. The main reasons: perceived cost, complexity of policies, and lack of awareness. Yet 70% of businesses that suffer a major uninsured loss never reopen.
+A 2024 survey by the UAE Insurance Authority found that fewer than 12% of UAE SMEs carry any form of business insurance. The main reasons: perceived cost, complexity of policies, and lack of awareness. Yet 70% of businesses that suffer a major uninsured loss never reopen.
 
 ## The core covers every business needs
 
@@ -218,18 +218,18 @@ A basic combined policy for a typical Dubai retail SME starts from around AED 12
 
 ## How to buy on InsureAE
 
-Complete our 5-minute business quote form, select your covers, and compare prices from Leadway, Zenith, NSIA, and Custodian Insurance. All policies include IA-regulated certificate delivery.
+Complete our 5-minute business quote form, select your covers, and compare prices from AXA Gulf, Daman, ADNIC, and GIG Gulf. All policies include IA-regulated certificate delivery.
     `.trim(),
   },
   {
-    slug: 'how-to-file-insurance-claim-nigeria',
-    title: 'How to File an Insurance Claim in UAE (Step-by-Step Guide)',
+    slug: 'how-to-file-insurance-claim-uae',
+    title: 'How to File a Health Insurance Claim in UAE (Step-by-Step Guide)',
     excerpt:
-      "Most UAEs never claim — not because they don't have losses, but because they don't know how. This guide walks you through every step.",
+      "Most UAE residents never claim — not because they don't have losses, but because they don't know how. This guide walks you through every step.",
     category: 'Guides',
     readTime: 6,
     publishedAt: '2025-02-10',
-    author: { name: 'Sarah Johnson', role: 'Claims Consultant' },
+    author: { name: 'Nour Al Rashid', role: 'Claims Consultant' },
     coverEmoji: '📝',
     tags: ['insurance claim UAE', 'how to claim motor insurance', 'IA claims'],
     content: `

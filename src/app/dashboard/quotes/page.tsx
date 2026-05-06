@@ -18,13 +18,6 @@ const STATUS_LABEL: Record<string, string> = {
   draft:     'Draft',
 }
 
-const QUOTE_ROUTES: Record<string, string> = {
-  motor:    '/quote/motor',
-  medical:  '/quote/medical',
-  travel:   '/quote/travel',
-  business: '/quote/business',
-}
-
 export default function QuotesPage() {
   return (
     <div className="px-4 lg:px-8 py-6 max-w-[900px] mx-auto">
@@ -38,17 +31,17 @@ export default function QuotesPage() {
           </p>
         </div>
         <Link
-          href="/quote/motor"
+          href="/quote/health"
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-sans font-semibold text-[13px] text-white"
-          style={{ backgroundColor: 'var(--green-700)' }}
+          style={{ background: 'linear-gradient(135deg,#0F2D55,#0D9488)' }}
         >
-          <Plus className="w-4 h-4" /> New quote
+          <Plus className="w-4 h-4" /> New Quote
         </Link>
       </div>
 
       <div className="flex flex-col gap-3">
         {mockQuotes.map((quote, i) => {
-          const colors = PRODUCT_COLORS[quote.productType]
+          const colors = PRODUCT_COLORS[quote.productType] ?? PRODUCT_COLORS.medical
           const expired = new Date(quote.expiresAt) < new Date()
           return (
             <motion.div
@@ -76,8 +69,8 @@ export default function QuotesPage() {
                   </Badge>
                 </div>
                 <p className="font-sans text-[12px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                  Created {new Date(quote.createdAt).toLocaleDateString('en-NG')} ·{' '}
-                  {expired ? <span style={{ color: 'var(--error)' }}>Expired</span> : `Expires ${new Date(quote.expiresAt).toLocaleDateString('en-NG')}`}
+                  Created {new Date(quote.createdAt).toLocaleDateString('en-AE')} ·{' '}
+                  {expired ? <span style={{ color: 'var(--error)' }}>Expired</span> : `Expires ${new Date(quote.expiresAt).toLocaleDateString('en-AE')}`}
                 </p>
               </div>
 
@@ -90,9 +83,9 @@ export default function QuotesPage() {
 
               {quote.status !== 'converted' && (
                 <Link
-                  href={QUOTE_ROUTES[quote.productType]}
-                  className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl font-sans font-semibold text-[12px] border transition-colors hover:bg-[var(--surface-raised)]"
-                  style={{ borderColor: 'var(--border-default)', color: 'var(--green-700)' }}
+                  href="/quote/health"
+                  className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl font-sans font-semibold text-[12px] border transition-colors hover:bg-[#F0FDFA]"
+                  style={{ borderColor: '#E5EAF0', color: '#0D9488' }}
                 >
                   Resume <ArrowRight className="w-3 h-3" />
                 </Link>
@@ -102,29 +95,20 @@ export default function QuotesPage() {
         })}
       </div>
 
-      {/* CTA */}
-      <div className="mt-6 p-5 rounded-2xl border text-center" style={{ backgroundColor: 'var(--green-50)', borderColor: 'var(--green-100)' }}>
-        <p className="font-sans font-semibold text-[14px] mb-1" style={{ color: 'var(--green-700)' }}>
-          Need a quote for another product?
+      <div className="mt-6 p-5 rounded-2xl border text-center" style={{ backgroundColor: '#F0FDFA', borderColor: '#CCFBF1' }}>
+        <p className="font-sans font-semibold text-[14px] mb-1" style={{ color: '#0D9488' }}>
+          Get a fresh health insurance quote
         </p>
         <p className="font-sans text-[13px] mb-3" style={{ color: 'var(--text-muted)' }}>
-          Motor, Medical, Travel, or Business insurance — we have you covered.
+          DHA & HAAD compliant plans for every UAE emirate — compare in 3 minutes.
         </p>
-        <div className="flex justify-center gap-2 flex-wrap">
-          {Object.entries(QUOTE_ROUTES).map(([type, href]) => {
-            const colors = PRODUCT_COLORS[type]
-            return (
-              <Link
-                key={type}
-                href={href}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl font-sans font-semibold text-[12px] border transition-colors hover:opacity-90"
-                style={{ backgroundColor: colors.light, borderColor: 'transparent', color: colors.text }}
-              >
-                {colors.emoji} {colors.label}
-              </Link>
-            )
-          })}
-        </div>
+        <Link
+          href="/quote/health"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-sans font-bold text-[13px] text-white transition-all hover:opacity-90"
+          style={{ background: 'linear-gradient(135deg,#0F2D55,#0D9488)' }}
+        >
+          Start New Quote <ArrowRight className="w-4 h-4" />
+        </Link>
       </div>
     </div>
   )

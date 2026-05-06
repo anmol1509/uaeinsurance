@@ -167,7 +167,7 @@ export default function ClaimsPage() {
           <p className="font-sans font-semibold text-[13px]" style={{ color: 'var(--green-700)' }}>Need help with a claim?</p>
           <p className="font-sans text-[12px]" style={{ color: 'var(--text-muted)' }}>
             Our claims team is available 24/7.{' '}
-            <a href="https://wa.me/2348001234567" className="underline font-medium" style={{ color: 'var(--green-700)' }}>
+            <a href="https://wa.me/97180047867" className="underline font-medium" style={{ color: 'var(--green-700)' }}>
               Chat on WhatsApp →
             </a>
           </p>

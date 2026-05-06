@@ -3,271 +3,166 @@ import { useState, useCallback } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  ChevronLeft, CheckCircle2, ArrowRight, Shield, Star,
-  Stethoscope, Hospital, Pill, TrendingUp, Users, User,
+  ChevronLeft, CheckCircle2, ArrowRight, Shield,
+  Stethoscope, Hospital, Pill, TrendingUp, Users, User, Star,
 } from 'lucide-react'
 import Logo from '@/components/ui/Logo'
 
-/* ─── Plan data ───────────────────────────────────────────── */
-interface Plan {
-  id: string
-  name: string
-  badge?: string
-  insurer: string
-  premium: number  // AED per year (self/LSB base)
-  premiumNLSB?: number
-  tag?: string
-  tagColor?: string
-  benefits: {
-    consultation: string
-    inpatient: string
-    outpatient: string
-    medicineLimit: string
-    medicineCopay: string
-    extras?: string[]
-  }
+/* ─── Enhanced plan option sets ─────────────────────────── */
+const CONSULTATION_OPTIONS = [
+  { id: 'gp',         label: 'GP Only',         sub: 'General Practitioner',   addOnPct: 0   },
+  { id: 'gp_spec',    label: 'GP + Specialist', sub: 'Any specialist referral', addOnPct: 0.12 },
+  { id: 'unlimited',  label: 'No Limit',        sub: 'Direct specialist access',addOnPct: 0.22 },
+]
+const IP_OPTIONS = [
+  { id: '150k',  label: 'AED 150,000',   addOnPct: 0    },
+  { id: '500k',  label: 'AED 500,000',   addOnPct: 0.15 },
+  { id: '1m',    label: 'AED 1,000,000', addOnPct: 0.28 },
+  { id: '3m',    label: 'AED 3,000,000', addOnPct: 0.45 },
+]
+const OP_OPTIONS = [
+  { id: '3k',   label: 'AED 3,000',   addOnPct: 0    },
+  { id: '7.5k', label: 'AED 7,500',   addOnPct: 0.10 },
+  { id: '15k',  label: 'AED 15,000',  addOnPct: 0.20 },
+  { id: 'unl',  label: 'Unlimited',   addOnPct: 0.35 },
+]
+const MED_LIMIT_OPTIONS = [
+  { id: '1.5k', label: 'AED 1,500',   addOnPct: 0    },
+  { id: '3k',   label: 'AED 3,000',   addOnPct: 0.08 },
+  { id: '5k',   label: 'AED 5,000',   addOnPct: 0.16 },
+  { id: '10k',  label: 'AED 10,000',  addOnPct: 0.26 },
+]
+const MED_COPAY_OPTIONS = [
+  { id: '20',  label: '20% copay', sub: 'You pay 20%', addOnPct: 0    },
+  { id: '15',  label: '15% copay', sub: 'You pay 15%', addOnPct: 0.06 },
+  { id: '10',  label: '10% copay', sub: 'You pay 10%', addOnPct: 0.12 },
+  { id: '0',   label: '0% copay',  sub: 'Fully covered',addOnPct: 0.22 },
+]
+
+/* ─── Non-Dubai 3 fixed plans ────────────────────────────── */
+interface FixedPlan {
+  id: string; name: string; insurer: string
+  premium: number; tag?: string; tagColor?: string; recommended?: boolean
   highlights: string[]
-  recommended?: boolean
+  benefits: { consultation: string; inpatient: string; outpatient: string; medicineLimit: string; medicineCopay: string; extras?: string[] }
 }
 
-// Non-Dubai — 3 fixed plans
-const NON_DUBAI_PLANS: Plan[] = [
+const NON_DUBAI_PLANS: FixedPlan[] = [
   {
-    id: 'essential',
-    name: 'Essential',
-    insurer: 'Neuron / RSA',
-    premium: 550,
-    benefits: {
-      consultation: 'AED 50 copay per visit',
-      inpatient: 'AED 150,000 / year',
-      outpatient: 'AED 3,000 / year',
-      medicineLimit: 'AED 1,500 / year',
-      medicineCopay: '20% copay',
-    },
-    highlights: [
-      'Covers emergency & hospitalisation',
-      'General GP visits',
-      'Basic prescription medicines',
-      'UAE-wide clinic network',
-    ],
+    id: 'essential', name: 'Essential', insurer: 'Neuron / RSA', premium: 550,
+    highlights: ['Emergency & hospitalisation', 'GP visits', 'Basic prescriptions', 'UAE-wide clinics'],
+    benefits: { consultation: 'AED 50 copay', inpatient: 'AED 150,000 / yr', outpatient: 'AED 3,000 / yr', medicineLimit: 'AED 1,500 / yr', medicineCopay: '20%' },
   },
   {
-    id: 'enhanced',
-    name: 'Enhanced',
-    insurer: 'Daman / GIG Gulf',
-    premium: 1_050,
-    tag: 'Most Popular',
-    tagColor: '#0D9488',
-    recommended: true,
-    benefits: {
-      consultation: 'AED 30 copay per visit',
-      inpatient: 'AED 500,000 / year',
-      outpatient: 'AED 7,500 / year',
-      medicineLimit: 'AED 3,000 / year',
-      medicineCopay: '15% copay',
-      extras: ['Dental AED 1,500/yr', 'Optical AED 500/yr'],
-    },
-    highlights: [
-      'Wider specialist network',
-      'Dental & optical included',
-      'Maternity basic cover',
-      'Chronic disease management',
-      'Direct billing at 400+ facilities',
-    ],
+    id: 'enhanced', name: 'Enhanced', insurer: 'Daman / GIG Gulf', premium: 1_050,
+    tag: 'Most Popular', tagColor: '#0D9488', recommended: true,
+    highlights: ['Wider specialist network', 'Dental & optical included', 'Maternity basic cover', 'Chronic disease management', 'Direct billing 400+ facilities'],
+    benefits: { consultation: 'AED 30 copay', inpatient: 'AED 500,000 / yr', outpatient: 'AED 7,500 / yr', medicineLimit: 'AED 3,000 / yr', medicineCopay: '15%', extras: ['Dental AED 1,500/yr', 'Optical AED 500/yr'] },
   },
   {
-    id: 'comprehensive',
-    name: 'Comprehensive',
-    insurer: 'AXA Gulf / Allianz',
-    premium: 1_980,
-    benefits: {
-      consultation: 'No copay',
-      inpatient: 'AED 3,000,000 / year',
-      outpatient: 'AED 15,000 / year',
-      medicineLimit: 'AED 5,000 / year',
-      medicineCopay: '10% copay',
-      extras: ['Dental AED 3,000/yr', 'Optical AED 1,000/yr', 'Maternity AED 10,000/yr', 'Mental health cover'],
-    },
-    highlights: [
-      'Premium all-UAE network',
-      'International emergency coverage',
-      'Full maternity & newborn',
-      'Unlimited IP at top hospitals',
-      'Mental health & wellness',
-      'Chronic & pre-existing review',
-    ],
+    id: 'comprehensive', name: 'Comprehensive', insurer: 'AXA Gulf / Allianz', premium: 1_980,
+    highlights: ['Premium all-UAE network', 'International emergency', 'Full maternity & newborn', 'Mental health cover', 'Unlimited IP top hospitals'],
+    benefits: { consultation: 'No copay', inpatient: 'AED 3,000,000 / yr', outpatient: 'AED 15,000 / yr', medicineLimit: 'AED 5,000 / yr', medicineCopay: '10%', extras: ['Dental AED 3,000/yr', 'Optical AED 1,000/yr', 'Maternity AED 10,000/yr'] },
   },
 ]
 
-// Dubai LSB plans (salary ≤ AED 4,000)
-const DUBAI_LSB_PLANS: Plan[] = [
-  {
-    id: 'basic_dha',
-    name: 'Basic DHA',
-    badge: 'DHA Mandatory',
-    insurer: 'Neuron / RSA',
-    premium: 620,
-    benefits: {
-      consultation: 'AED 50 copay',
-      inpatient: 'AED 150,000 / year',
-      outpatient: 'AED 1,500 / year',
-      medicineLimit: 'AED 1,500 / year',
-      medicineCopay: '20% copay',
-    },
-    highlights: [
-      'DHA-compliant mandatory plan',
-      'Emergency hospitalisation',
-      'Basic GP visits in Dubai',
-      'Employer-sponsored eligible',
-    ],
-  },
-  {
-    id: 'enhanced_dubai_lsb',
-    name: 'Enhanced Dubai',
-    insurer: 'Daman / GIG Gulf',
-    premium: 1_080,
-    tag: 'Recommended',
-    tagColor: '#0D9488',
-    recommended: true,
-    benefits: {
-      consultation: 'AED 30 copay',
-      inpatient: 'AED 500,000 / year',
-      outpatient: 'AED 5,000 / year',
-      medicineLimit: 'AED 3,000 / year',
-      medicineCopay: '15% copay',
-      extras: ['Dental AED 1,000/yr', 'Maternity basic'],
-    },
-    highlights: [
-      'Wider network beyond basic DHA',
-      'Specialist referrals included',
-      'Direct billing at 500+ facilities',
-      'Dental & maternity top-up',
-      'Chronic condition management',
-    ],
-  },
-]
-
-// Dubai NLSB plans (salary > AED 4,000)
-const DUBAI_NLSB_PLANS: Plan[] = [
-  {
-    id: 'standard_nlsb',
-    name: 'Standard',
-    insurer: 'ADNIC / Sukoon',
-    premium: 1_350,
-    benefits: {
-      consultation: 'AED 30 copay',
-      inpatient: 'AED 1,000,000 / year',
-      outpatient: 'AED 10,000 / year',
-      medicineLimit: 'AED 5,000 / year',
-      medicineCopay: '15% copay',
-    },
-    highlights: [
-      'Broad Dubai network',
-      'Specialist & diagnostics',
-      'Prescription medicines',
-      'Physiotherapy sessions',
-    ],
-  },
-  {
-    id: 'enhanced_nlsb',
-    name: 'Enhanced',
-    insurer: 'AXA Gulf / Cigna',
-    premium: 2_100,
-    tag: 'Best Value',
-    tagColor: '#D4A24B',
-    recommended: true,
-    benefits: {
-      consultation: 'No copay',
-      inpatient: 'AED 3,000,000 / year',
-      outpatient: 'AED 20,000 / year',
-      medicineLimit: 'AED 10,000 / year',
-      medicineCopay: '10% copay',
-      extras: ['Dental AED 3,000/yr', 'Optical AED 1,000/yr', 'Maternity AED 15,000/yr'],
-    },
-    highlights: [
-      'Premium network — top UAE hospitals',
-      'No copay on consultations',
-      'Full maternity & newborn cover',
-      'Dental & optical included',
-      'International emergency SOS',
-      'Mental health & wellness',
-    ],
-  },
-]
+/* ─── Dubai base premiums ────────────────────────────────── */
+const DUBAI_BASIC_LSB  = { id: 'basic_lsb',  premium: 620,   insurer: 'Neuron / RSA' }
+const DUBAI_BASIC_NLSB = { id: 'basic_nlsb', premium: 890,   insurer: 'ADNIC / Sukoon' }
+const DUBAI_ENHANCED_BASE_LSB  = 850
+const DUBAI_ENHANCED_BASE_NLSB = 1_200
 
 /* ─── Types ──────────────────────────────────────────────── */
-type StepId = 'contact' | 'emirate' | 'salary' | 'member_type' | 'dependents' | 'plan_compare' | 'premium'
+type StepId = 'emirate' | 'member_type' | 'salary' | 'dependents' | 'plan_type' | 'enhanced_config' | 'checkout'
+
+interface EnhancedConfig { consultation: string; inpatient: string; outpatient: string; medicineLimit: string; medicineCopay: string }
 
 interface QuoteData {
-  name: string
-  email: string
-  mobile: string
   emirate: string
-  salaryBand: string   // 'lsb' | 'nlsb'
-  memberType: string   // 'self' | 'dependent'
+  memberType: string       // 'self' | 'dependent'
+  salaryBand: string       // 'lsb' | 'nlsb' — Dubai+Self only
   hasSpouse: boolean
   children: number
   hasParents: boolean
-  selectedPlan: Plan | null
+  planType: string         // 'basic' | 'enhanced' | fixed plan id for non-dubai
+  enhancedConfig: EnhancedConfig
+  // contact — collected at checkout
+  name: string; email: string; mobile: string
 }
 
-/* ─── Helpers ─────────────────────────────────────────────── */
-function cn(...cls: (string | boolean | undefined | null)[]) {
-  return cls.filter(Boolean).join(' ')
-}
+function cn(...cls: (string | boolean | undefined | null)[]) { return cls.filter(Boolean).join(' ') }
 
 const slide = {
-  initial: { opacity: 0, x: 32 },
-  animate: { opacity: 1, x: 0, transition: { duration: 0.26, ease: [0.4, 0, 0.2, 1] as [number,number,number,number] } },
-  exit:    { opacity: 0, x: -32, transition: { duration: 0.18 } },
+  initial: { opacity: 0, x: 28 },
+  animate: { opacity: 1, x: 0, transition: { duration: 0.25, ease: [0.4, 0, 0.2, 1] as [number,number,number,number] } },
+  exit:    { opacity: 0, x: -28, transition: { duration: 0.18 } },
 }
 
-function computePremium(plan: Plan, data: QuoteData): number {
-  let base = data.salaryBand === 'lsb' ? plan.premium : (plan.premiumNLSB ?? plan.premium)
+/* ─── Premium calculation ────────────────────────────────── */
+function calcBasePremium(data: QuoteData): number {
+  if (data.emirate !== 'dubai') {
+    const plan = NON_DUBAI_PLANS.find(p => p.id === data.planType)
+    return plan?.premium ?? 0
+  }
+  if (data.planType === 'basic') {
+    return data.salaryBand === 'lsb' ? DUBAI_BASIC_LSB.premium : DUBAI_BASIC_NLSB.premium
+  }
+  // enhanced
+  const base = data.salaryBand === 'lsb' ? DUBAI_ENHANCED_BASE_LSB : DUBAI_ENHANCED_BASE_NLSB
+  const cfg = data.enhancedConfig
+  const addOn = (
+    (CONSULTATION_OPTIONS.find(o => o.id === cfg.consultation)?.addOnPct ?? 0) +
+    (IP_OPTIONS.find(o => o.id === cfg.inpatient)?.addOnPct ?? 0) +
+    (OP_OPTIONS.find(o => o.id === cfg.outpatient)?.addOnPct ?? 0) +
+    (MED_LIMIT_OPTIONS.find(o => o.id === cfg.medicineLimit)?.addOnPct ?? 0) +
+    (MED_COPAY_OPTIONS.find(o => o.id === cfg.medicineCopay)?.addOnPct ?? 0)
+  )
+  return Math.round(base * (1 + addOn))
+}
+
+function calcTotalPremium(data: QuoteData): number {
+  const base = calcBasePremium(data)
   let total = base
-  if (data.hasSpouse) total += base * 0.85
-  total += data.children * base * 0.55
-  if (data.hasParents) total += base * 1.2
-  return Math.round(total)
+  if (data.hasSpouse) total += Math.round(base * 0.85)
+  total += data.children * Math.round(base * 0.55)
+  if (data.hasParents) total += Math.round(base * 1.2)
+  return total
 }
 
-/* ─── Main ───────────────────────────────────────────────── */
+/* ─── Main component ─────────────────────────────────────── */
 export default function HealthQuoteFlow() {
   const searchParams = useSearchParams()
   const router = useRouter()
 
-  const initialEmirate = searchParams.get('emirate') || ''
-  const isDubaiStart = initialEmirate === 'dubai'
-
-  const [step, setStep] = useState<StepId>(initialEmirate ? (isDubaiStart ? 'contact' : 'contact') : 'contact')
-
+  const [step, setStep] = useState<StepId>('emirate')
   const [data, setData] = useState<QuoteData>({
+    emirate: searchParams.get('emirate') || '',
+    memberType: '', salaryBand: '',
+    hasSpouse: false, children: 0, hasParents: false,
+    planType: '',
+    enhancedConfig: { consultation: '', inpatient: '', outpatient: '', medicineLimit: '', medicineCopay: '' },
     name: '', email: '', mobile: '',
-    emirate: initialEmirate,
-    salaryBand: '',
-    memberType: '',
-    hasSpouse: false,
-    children: 0,
-    hasParents: false,
-    selectedPlan: null,
   })
 
   const set = useCallback(<K extends keyof QuoteData>(k: K, v: QuoteData[K]) =>
     setData(prev => ({ ...prev, [k]: v })), [])
 
+  const setEnhanced = useCallback((k: keyof EnhancedConfig, v: string) =>
+    setData(prev => ({ ...prev, enhancedConfig: { ...prev.enhancedConfig, [k]: v } })), [])
+
   const isDubai = data.emirate === 'dubai'
 
   function getSteps(): StepId[] {
-    const steps: StepId[] = ['contact', 'emirate']
-    if (!data.emirate) return steps
-    if (!isDubai) {
-      steps.push('plan_compare', 'premium')
-      return steps
-    }
-    steps.push('salary', 'member_type')
-    if (data.memberType === 'dependent') steps.push('dependents')
-    steps.push('plan_compare', 'premium')
-    return steps
+    const s: StepId[] = ['emirate']
+    if (!data.emirate) return s
+    if (!isDubai) { s.push('plan_type', 'checkout'); return s }
+    s.push('member_type')
+    if (data.memberType === 'dependent') s.push('dependents')
+    if (data.memberType === 'self')      s.push('salary')
+    s.push('plan_type')
+    if (data.planType === 'enhanced')    s.push('enhanced_config')
+    s.push('checkout')
+    return s
   }
 
   const steps = getSteps()
@@ -275,87 +170,76 @@ export default function HealthQuoteFlow() {
   const progress = Math.round(((stepIdx + 1) / steps.length) * 100)
 
   function goNext() {
-    // Special: after emirate, if non-dubai skip straight to plan_compare
-    if (step === 'emirate' && data.emirate && data.emirate !== 'dubai') {
-      setStep('plan_compare')
+    if (step === 'emirate' && data.emirate) {
+      setStep(data.emirate === 'dubai' ? 'member_type' : 'plan_type')
       return
     }
-    const next = steps[stepIdx + 1]
+    if (step === 'plan_type' && data.planType === 'enhanced' && isDubai) {
+      setStep('enhanced_config')
+      return
+    }
+    const next = steps[steps.indexOf(step) + 1]
     if (next) setStep(next)
   }
 
   function goBack() {
-    const prev = steps[stepIdx - 1]
+    const prev = steps[steps.indexOf(step) - 1]
     if (prev) setStep(prev)
   }
 
-  function getPlans(): Plan[] {
-    if (!isDubai) return NON_DUBAI_PLANS
-    if (data.salaryBand === 'lsb') return DUBAI_LSB_PLANS
-    return DUBAI_NLSB_PLANS
-  }
-
-  const emirateName = {
+  const emirateName: Record<string, string> = {
     dubai: 'Dubai', abudhabi: 'Abu Dhabi', sharjah: 'Sharjah',
     ajman: 'Ajman', rak: 'RAK', fujairah: 'Fujairah', uaq: 'UAQ',
-  }[data.emirate] ?? data.emirate
+  }
 
-  /* Section tabs for top bar */
+  const totalPremium = calcTotalPremium(data)
+  const basePremium  = calcBasePremium(data)
+
+  /* ── Section labels ── */
   const SECTIONS = isDubai
-    ? ['Contact', 'Emirate', 'Salary', 'Members', 'Plans', 'Premium']
-    : ['Contact', 'Emirate', 'Plans', 'Premium']
-
-  const sectionStepMap = isDubai
-    ? [['contact'], ['emirate'], ['salary'], ['member_type', 'dependents'], ['plan_compare'], ['premium']]
-    : [['contact'], ['emirate'], ['plan_compare'], ['premium']]
+    ? ['Emirate', 'Members', data.memberType === 'self' ? 'Salary' : 'Dependents', 'Plan', 'Checkout']
+    : ['Emirate', 'Plan', 'Checkout']
+  const SECTION_STEPS = isDubai
+    ? [['emirate'], ['member_type'], data.memberType === 'self' ? ['salary'] : ['dependents'], ['plan_type', 'enhanced_config'], ['checkout']]
+    : [['emirate'], ['plan_type'], ['checkout']]
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#F4F7FB' }}>
 
-      {/* Top header */}
-      <div className="bg-white border-b sticky top-0 z-40" style={{ borderColor: 'var(--border-default)' }}>
+      {/* Header */}
+      <div className="bg-white border-b sticky top-0 z-40" style={{ borderColor: '#E5EAF0' }}>
         <div className="max-w-[860px] mx-auto px-5 h-14 flex items-center justify-between">
           <Logo size={30} />
           <div className="flex items-center gap-4">
-            <a href="tel:+97180047867" className="hidden sm:flex items-center gap-1.5 font-sans text-[13px] font-semibold"
-              style={{ color: '#0D9488' }}>
+            <a href="tel:+97180047867" className="hidden sm:flex items-center gap-1.5 font-sans text-[13px] font-semibold" style={{ color: '#0D9488' }}>
               📞 800-INSURE
             </a>
-            <div className="flex items-center gap-1.5 font-sans text-[12px]" style={{ color: 'var(--text-muted)' }}>
-              <Shield className="w-3.5 h-3.5" style={{ color: '#0D9488' }} />
-              IA Licensed
+            <div className="flex items-center gap-1.5 font-sans text-[12px]" style={{ color: '#64748B' }}>
+              <Shield className="w-3.5 h-3.5" style={{ color: '#0D9488' }} /> IA Licensed
             </div>
           </div>
         </div>
       </div>
 
-      {/* Progress bar */}
-      <div className="bg-white border-b" style={{ borderColor: 'var(--border-default)' }}>
+      {/* Progress tabs */}
+      <div className="bg-white border-b" style={{ borderColor: '#E5EAF0' }}>
         <div className="max-w-[860px] mx-auto px-5">
-          <div className="flex items-center py-3 gap-0">
+          <div className="flex items-center py-3">
             {SECTIONS.map((sec, i) => {
-              const stepIds = sectionStepMap[i] as StepId[]
-              const done = stepIds.every(s => steps.indexOf(s) < stepIdx)
+              const stepIds = SECTION_STEPS[i] as StepId[]
+              const done   = stepIds.every(s => steps.indexOf(s) < stepIdx)
               const active = stepIds.includes(step)
               return (
                 <div key={sec} className="flex-1 flex flex-col items-center relative">
-                  {i > 0 && (
-                    <div className="absolute left-0 top-[14px] w-full h-0.5 -translate-y-1/2"
-                      style={{ backgroundColor: done ? '#0D9488' : '#E5EAF0', zIndex: 0 }} />
-                  )}
+                  {i > 0 && <div className="absolute left-0 top-[14px] w-full h-0.5 -translate-y-1/2"
+                    style={{ backgroundColor: done ? '#0D9488' : '#E5EAF0', zIndex: 0 }} />}
                   <div className="relative z-10 flex flex-col items-center gap-1">
                     <div className="w-7 h-7 rounded-full flex items-center justify-center font-sans font-bold text-[11px] transition-all"
-                      style={{
-                        backgroundColor: done ? '#0D9488' : active ? '#0F2D55' : 'white',
-                        border: done || active ? 'none' : '2px solid #CBD5E1',
-                        color: done || active ? 'white' : '#94A3B8',
-                      }}>
+                      style={{ backgroundColor: done ? '#0D9488' : active ? '#0F2D55' : 'white', border: done || active ? 'none' : '2px solid #CBD5E1', color: done || active ? 'white' : '#94A3B8' }}>
                       {done ? <CheckCircle2 className="w-3.5 h-3.5" /> : i + 1}
                     </div>
                     <span className="font-sans font-medium text-[9.5px] text-center leading-tight hidden sm:block"
-                      style={{ color: active ? '#0F2D55' : done ? '#0D9488' : '#94A3B8' }}>
-                      {sec}
-                    </span>
+                      style={{ color: active ? '#0F2D55' : done ? '#0D9488' : '#94A3B8' }}>{sec}</span>
                   </div>
                 </div>
               )
@@ -363,60 +247,20 @@ export default function HealthQuoteFlow() {
           </div>
           <div className="h-1 w-full rounded-full overflow-hidden mb-2" style={{ backgroundColor: '#E5EAF0' }}>
             <div className="h-full transition-all duration-500 rounded-full"
-              style={{ width: `${progress}%`, background: 'linear-gradient(90deg, #0F2D55, #0D9488)' }} />
+              style={{ width: `${progress}%`, background: 'linear-gradient(90deg,#0F2D55,#0D9488)' }} />
           </div>
         </div>
       </div>
 
-      {/* Step content */}
-      <div className="max-w-[680px] mx-auto px-5 py-8">
+      <div className="max-w-[720px] mx-auto px-5 py-8">
         <AnimatePresence mode="wait">
           <motion.div key={step} variants={slide} initial="initial" animate="animate" exit="exit">
-
-            {/* ══ CONTACT ══ */}
-            {step === 'contact' && (
-              <Shell title="Enter Your Details" sub="Your information is secure and encrypted" icon="👤">
-                <div className="space-y-4">
-                  <Field label="Full name">
-                    <input type="text" value={data.name} placeholder="Ahmed Al Mansoori"
-                      onChange={e => set('name', e.target.value)}
-                      className="w-full h-12 rounded-xl border px-4 font-sans text-[14px] bg-white outline-none"
-                      style={{ borderColor: 'var(--border-medium)' }}
-                      onFocus={foc} onBlur={blu} />
-                  </Field>
-                  <Field label="Email address">
-                    <input type="email" value={data.email} placeholder="you@example.com"
-                      onChange={e => set('email', e.target.value)}
-                      className="w-full h-12 rounded-xl border px-4 font-sans text-[14px] bg-white outline-none"
-                      style={{ borderColor: 'var(--border-medium)' }}
-                      onFocus={foc} onBlur={blu} />
-                  </Field>
-                  <Field label="UAE mobile number">
-                    <div className="flex">
-                      <span className="flex items-center px-3.5 border border-r-0 rounded-l-xl font-sans font-semibold text-[13px] shrink-0"
-                        style={{ borderColor: 'var(--border-medium)', backgroundColor: '#F4F7FB', color: 'var(--text-secondary)' }}>
-                        🇦🇪 +971
-                      </span>
-                      <input type="tel" value={data.mobile} placeholder="50 123 4567"
-                        onChange={e => set('mobile', e.target.value.replace(/\D/g, '').slice(0, 9))}
-                        className="flex-1 h-12 rounded-r-xl border px-4 font-sans text-[14px] bg-white outline-none"
-                        style={{ borderColor: 'var(--border-medium)' }}
-                        onFocus={foc} onBlur={blu} />
-                    </div>
-                  </Field>
-                  <p className="font-sans text-[11.5px] leading-relaxed" style={{ color: 'var(--text-subtle)' }}>
-                    By continuing, I agree to InsureAE&apos;s Privacy Policy and Terms of Use, and confirm I am a UAE resident.
-                  </p>
-                </div>
-                <Buttons onNext={goNext} disabled={!data.name || !data.email || data.mobile.length < 8} hideBack />
-              </Shell>
-            )}
 
             {/* ══ EMIRATE ══ */}
             {step === 'emirate' && (
               <Shell title="Emirate of Visa Issuance" sub="Coverage terms and mandatory plans differ by emirate" icon="📍">
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-                  {[
+                  {([
                     { id: 'dubai',    label: 'Dubai',     abbr: 'DXB', note: 'DHA mandatory' },
                     { id: 'abudhabi', label: 'Abu Dhabi', abbr: 'AUH', note: 'HAAD rules' },
                     { id: 'sharjah',  label: 'Sharjah',  abbr: 'SHJ', note: '' },
@@ -424,7 +268,7 @@ export default function HealthQuoteFlow() {
                     { id: 'rak',      label: 'RAK',      abbr: 'RKT', note: '' },
                     { id: 'fujairah', label: 'Fujairah', abbr: 'FJR', note: '' },
                     { id: 'uaq',      label: 'UAQ',      abbr: 'UAQ', note: '' },
-                  ].map(({ id, label, abbr, note }) => (
+                  ] as const).map(({ id, label, abbr, note }) => (
                     <Chip key={id} active={data.emirate === id}
                       onClick={() => { set('emirate', id); setTimeout(goNext, 200) }}>
                       <span className="w-10 h-10 rounded-lg font-display font-extrabold text-[11px] flex items-center justify-center shrink-0"
@@ -439,84 +283,31 @@ export default function HealthQuoteFlow() {
                     </Chip>
                   ))}
                 </div>
-                <Buttons onNext={goNext} disabled={!data.emirate} onBack={goBack} />
+                <Buttons onNext={goNext} disabled={!data.emirate} hideBack />
               </Shell>
             )}
 
-            {/* ══ SALARY (Dubai only) ══ */}
-            {step === 'salary' && (
-              <Shell title="What is your monthly salary?" sub="Determines your DHA tier and minimum plan requirements" icon="💼">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {[
-                    {
-                      id: 'lsb',
-                      title: 'LSB',
-                      subtitle: 'Low Salary Band',
-                      amount: 'Up to AED 4,000 / month',
-                      note: 'DHA Basic plan required',
-                      color: '#0D9488',
-                    },
-                    {
-                      id: 'nlsb',
-                      title: 'NLSB',
-                      subtitle: 'Non-Low Salary Band',
-                      amount: 'Above AED 4,000 / month',
-                      note: 'Access to enhanced plans',
-                      color: '#0F2D55',
-                    },
-                  ].map(({ id, title, subtitle, amount, note, color }) => {
-                    const active = data.salaryBand === id
-                    return (
-                      <button key={id} type="button"
-                        onClick={() => { set('salaryBand', id); setTimeout(goNext, 200) }}
-                        className="flex flex-col items-start p-5 rounded-2xl border-2 text-left transition-all w-full hover:-translate-y-0.5"
-                        style={{
-                          borderColor: active ? color : 'var(--border-default)',
-                          backgroundColor: active ? (id === 'lsb' ? '#F0FDFA' : '#EBF2FA') : 'white',
-                        }}>
-                        <div className="flex items-center justify-between w-full mb-3">
-                          <span className="font-display font-extrabold text-[22px]" style={{ color }}>{title}</span>
-                          {active && <CheckCircle2 className="w-5 h-5" style={{ color }} />}
-                        </div>
-                        <div className="font-sans font-bold text-[14px] mb-1" style={{ color: 'var(--text-primary)' }}>{subtitle}</div>
-                        <div className="font-sans text-[13px] mb-2" style={{ color: 'var(--text-secondary)' }}>{amount}</div>
-                        <div className="text-[11px] font-sans px-2.5 py-1 rounded-full"
-                          style={{ backgroundColor: active ? color : '#F1F5F9', color: active ? 'white' : '#64748B' }}>
-                          {note}
-                        </div>
-                      </button>
-                    )
-                  })}
-                </div>
-                <Buttons onNext={goNext} disabled={!data.salaryBand} onBack={goBack} />
-              </Shell>
-            )}
-
-            {/* ══ MEMBER TYPE (Dubai only) ══ */}
+            {/* ══ MEMBER TYPE (Dubai) ══ */}
             {step === 'member_type' && (
               <Shell title="Who are you insuring?" sub="Select the primary category for this policy" icon="👥">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {[
-                    { id: 'self',      label: 'Self Only',      sub: 'Coverage for yourself',       icon: User },
-                    { id: 'dependent', label: 'Self + Dependents', sub: 'Spouse, children, parents', icon: Users },
-                  ].map(({ id, label, sub, icon: Icon }) => {
+                  {([
+                    { id: 'self',      label: 'Self Only',         sub: 'Coverage for yourself only',  icon: User },
+                    { id: 'dependent', label: 'Self + Dependents', sub: 'Spouse, children, parents',   icon: Users },
+                  ] as const).map(({ id, label, sub, icon: Icon }) => {
                     const active = data.memberType === id
                     return (
                       <button key={id} type="button"
                         onClick={() => { set('memberType', id); setTimeout(goNext, 200) }}
-                        className="flex flex-col items-center justify-center p-6 rounded-2xl border-2 text-center transition-all hover:-translate-y-0.5 gap-3"
-                        style={{
-                          borderColor: active ? '#0D9488' : 'var(--border-default)',
-                          backgroundColor: active ? '#F0FDFA' : 'white',
-                        }}>
+                        className="flex flex-col items-center p-6 rounded-2xl border-2 text-center transition-all hover:-translate-y-0.5 gap-3"
+                        style={{ borderColor: active ? '#0D9488' : '#E5EAF0', backgroundColor: active ? '#F0FDFA' : 'white' }}>
                         <div className="w-14 h-14 rounded-2xl flex items-center justify-center"
                           style={{ backgroundColor: active ? '#0D9488' : '#EBF2FA' }}>
                           <Icon className="w-7 h-7" style={{ color: active ? 'white' : '#133B6E' }} />
                         </div>
                         <div>
-                          <div className="font-sans font-bold text-[15px]"
-                            style={{ color: active ? '#0A7A72' : 'var(--text-primary)' }}>{label}</div>
-                          <div className="font-sans text-[12px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{sub}</div>
+                          <div className="font-sans font-bold text-[15px]" style={{ color: active ? '#0A7A72' : '#0F2D55' }}>{label}</div>
+                          <div className="font-sans text-[12px] mt-0.5" style={{ color: '#64748B' }}>{sub}</div>
                         </div>
                         {active && <CheckCircle2 className="w-5 h-5" style={{ color: '#0D9488' }} />}
                       </button>
@@ -527,215 +318,364 @@ export default function HealthQuoteFlow() {
               </Shell>
             )}
 
-            {/* ══ DEPENDENTS (Dubai only) ══ */}
+            {/* ══ SALARY (Dubai + Self) ══ */}
+            {step === 'salary' && (
+              <Shell title="What is your monthly salary?" sub="Determines your DHA mandatory plan tier" icon="💼">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {([
+                    { id: 'lsb',  title: 'LSB',  subtitle: 'Low Salary Band',      amount: 'Up to AED 4,000/month',    note: 'DHA Basic plan required',    color: '#0D9488' },
+                    { id: 'nlsb', title: 'NLSB', subtitle: 'Non-Low Salary Band',  amount: 'Above AED 4,000/month',    note: 'Access to enhanced plans',   color: '#0F2D55' },
+                  ] as const).map(({ id, title, subtitle, amount, note, color }) => {
+                    const active = data.salaryBand === id
+                    return (
+                      <button key={id} type="button"
+                        onClick={() => { set('salaryBand', id); setTimeout(goNext, 200) }}
+                        className="flex flex-col items-start p-5 rounded-2xl border-2 text-left transition-all hover:-translate-y-0.5"
+                        style={{ borderColor: active ? color : '#E5EAF0', backgroundColor: active ? (id === 'lsb' ? '#F0FDFA' : '#EBF2FA') : 'white' }}>
+                        <div className="flex items-center justify-between w-full mb-3">
+                          <span className="font-display font-extrabold text-[24px]" style={{ color }}>{title}</span>
+                          {active && <CheckCircle2 className="w-5 h-5" style={{ color }} />}
+                        </div>
+                        <div className="font-sans font-bold text-[14px] mb-1" style={{ color: '#0F2D55' }}>{subtitle}</div>
+                        <div className="font-sans text-[13px] mb-3" style={{ color: '#475569' }}>{amount}</div>
+                        <span className="text-[11px] font-sans px-2.5 py-1 rounded-full"
+                          style={{ backgroundColor: active ? color : '#F1F5F9', color: active ? 'white' : '#64748B' }}>{note}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+                <Buttons onNext={goNext} disabled={!data.salaryBand} onBack={goBack} />
+              </Shell>
+            )}
+
+            {/* ══ DEPENDENTS (Dubai + Dependent) ══ */}
             {step === 'dependents' && (
-              <Shell title="Add Your Dependents" sub="Enter details for each person to be covered" icon="👨‍👩‍👧‍👦">
-                <div className="space-y-4">
-                  {/* Spouse */}
-                  <div className="bg-white rounded-2xl border overflow-hidden" style={{ borderColor: 'var(--border-default)' }}>
-                    <div className="flex items-center justify-between px-4 py-3 border-b"
-                      style={{ backgroundColor: '#EBF2FA', borderColor: 'var(--border-subtle)' }}>
-                      <span className="font-sans font-bold text-[13px]" style={{ color: '#0F2D55' }}>Spouse</span>
-                      <button type="button"
-                        onClick={() => set('hasSpouse', !data.hasSpouse)}
-                        className="relative w-11 h-6 rounded-full transition-all"
-                        style={{ backgroundColor: data.hasSpouse ? '#0D9488' : '#CBD5E1' }}>
-                        <span className="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all"
-                          style={{ left: data.hasSpouse ? '22px' : '2px' }} />
-                      </button>
-                    </div>
-                    {data.hasSpouse && (
-                      <div className="p-4">
-                        <p className="font-sans text-[13px]" style={{ color: 'var(--text-muted)' }}>
-                          Spouse will be added to this policy. Details collected at checkout.
-                        </p>
+              <Shell title="Add Your Dependents" sub="Toggle who should be covered under this policy" icon="👨‍👩‍👧‍👦">
+                <div className="space-y-3">
+                  {[
+                    { key: 'hasSpouse' as const,  label: 'Spouse',  sub: 'Life partner / spouse' },
+                    { key: 'hasParents' as const, label: 'Parents', sub: 'Father and/or mother' },
+                  ].map(({ key, label, sub }) => (
+                    <div key={key} className="bg-white rounded-2xl border overflow-hidden" style={{ borderColor: '#E5EAF0' }}>
+                      <div className="flex items-center justify-between px-4 py-3.5">
+                        <div>
+                          <div className="font-sans font-bold text-[14px]" style={{ color: '#0F2D55' }}>{label}</div>
+                          <div className="font-sans text-[12px]" style={{ color: '#64748B' }}>{sub}</div>
+                        </div>
+                        <button type="button" onClick={() => set(key, !data[key])}
+                          className="relative w-11 h-6 rounded-full transition-all shrink-0"
+                          style={{ backgroundColor: data[key] ? '#0D9488' : '#CBD5E1' }}>
+                          <span className="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all"
+                            style={{ left: data[key] ? '22px' : '2px' }} />
+                        </button>
                       </div>
-                    )}
-                  </div>
-
-                  {/* Children */}
-                  <div className="bg-white rounded-2xl border overflow-hidden" style={{ borderColor: 'var(--border-default)' }}>
-                    <div className="flex items-center justify-between px-4 py-3 border-b"
-                      style={{ backgroundColor: '#EBF2FA', borderColor: 'var(--border-subtle)' }}>
-                      <span className="font-sans font-bold text-[13px]" style={{ color: '#0F2D55' }}>Children</span>
                     </div>
-                    <div className="p-4 flex items-center justify-between">
-                      <span className="font-sans text-[14px]" style={{ color: 'var(--text-secondary)' }}>Number of children</span>
+                  ))}
+
+                  {/* Children counter */}
+                  <div className="bg-white rounded-2xl border" style={{ borderColor: '#E5EAF0' }}>
+                    <div className="flex items-center justify-between px-4 py-3.5">
+                      <div>
+                        <div className="font-sans font-bold text-[14px]" style={{ color: '#0F2D55' }}>Children</div>
+                        <div className="font-sans text-[12px]" style={{ color: '#64748B' }}>Up to 8 children</div>
+                      </div>
                       <div className="flex items-center gap-3">
-                        <button type="button"
-                          onClick={() => set('children', Math.max(0, data.children - 1))}
-                          className="w-9 h-9 rounded-xl border flex items-center justify-center text-lg font-bold transition-colors hover:bg-gray-50"
-                          style={{ borderColor: 'var(--border-medium)', color: 'var(--text-secondary)' }}>−</button>
-                        <span className="font-display font-bold text-[20px] w-8 text-center"
-                          style={{ color: '#0F2D55' }}>{data.children}</span>
-                        <button type="button"
-                          onClick={() => set('children', Math.min(8, data.children + 1))}
-                          className="w-9 h-9 rounded-xl border flex items-center justify-center text-lg font-bold transition-colors hover:bg-[#F0FDFA]"
-                          style={{ borderColor: data.children < 8 ? '#0D9488' : 'var(--border-medium)', color: data.children < 8 ? '#0D9488' : 'var(--text-subtle)' }}>+</button>
+                        <button type="button" onClick={() => set('children', Math.max(0, data.children - 1))}
+                          className="w-9 h-9 rounded-xl border flex items-center justify-center text-xl font-bold transition-colors hover:bg-gray-50"
+                          style={{ borderColor: '#E5EAF0', color: '#475569' }}>−</button>
+                        <span className="font-display font-bold text-[20px] w-7 text-center" style={{ color: '#0F2D55' }}>{data.children}</span>
+                        <button type="button" onClick={() => set('children', Math.min(8, data.children + 1))}
+                          className="w-9 h-9 rounded-xl border flex items-center justify-center text-xl font-bold transition-colors hover:bg-[#F0FDFA]"
+                          style={{ borderColor: data.children < 8 ? '#0D9488' : '#E5EAF0', color: data.children < 8 ? '#0D9488' : '#CBD5E1' }}>+</button>
                       </div>
                     </div>
-                  </div>
-
-                  {/* Parents */}
-                  <div className="bg-white rounded-2xl border overflow-hidden" style={{ borderColor: 'var(--border-default)' }}>
-                    <div className="flex items-center justify-between px-4 py-3 border-b"
-                      style={{ backgroundColor: '#EBF2FA', borderColor: 'var(--border-subtle)' }}>
-                      <span className="font-sans font-bold text-[13px]" style={{ color: '#0F2D55' }}>Parents</span>
-                      <button type="button"
-                        onClick={() => set('hasParents', !data.hasParents)}
-                        className="relative w-11 h-6 rounded-full transition-all"
-                        style={{ backgroundColor: data.hasParents ? '#0D9488' : '#CBD5E1' }}>
-                        <span className="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all"
-                          style={{ left: data.hasParents ? '22px' : '2px' }} />
-                      </button>
-                    </div>
-                    {data.hasParents && (
-                      <div className="p-4">
-                        <p className="font-sans text-[13px]" style={{ color: 'var(--text-muted)' }}>
-                          Parents will be added. Individual details collected at checkout.
-                        </p>
-                      </div>
-                    )}
                   </div>
                 </div>
                 <Buttons onNext={goNext} disabled={false} onBack={goBack} nextLabel="View Plans" />
               </Shell>
             )}
 
-            {/* ══ PLAN COMPARISON ══ */}
-            {step === 'plan_compare' && (
+            {/* ══ PLAN TYPE ══ */}
+            {step === 'plan_type' && (
               <div>
                 <div className="text-center mb-6">
                   <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full mb-3 font-sans font-semibold text-[12px]"
                     style={{ backgroundColor: '#F0FDFA', color: '#0D9488', border: '1px solid #CCFBF1' }}>
-                    ✓ Plans for {emirateName}{isDubai && data.salaryBand ? ` · ${data.salaryBand.toUpperCase()}` : ''}
+                    Plans for {emirateName[data.emirate] ?? data.emirate}
+                    {isDubai && data.salaryBand ? ` · ${data.salaryBand.toUpperCase()}` : ''}
+                    {isDubai && data.memberType ? ` · ${data.memberType === 'self' ? 'Self' : 'Family'}` : ''}
                   </div>
-                  <h2 className="font-display font-bold text-[24px] mb-1" style={{ color: '#0F2D55' }}>
-                    Choose Your Plan
-                  </h2>
-                  <p className="font-sans text-[14px]" style={{ color: 'var(--text-muted)' }}>
-                    {isDubai ? 'DHA-compliant options for your salary band' : 'Fixed plans available for your emirate'}
+                  <h2 className="font-display font-bold text-[24px] mb-1" style={{ color: '#0F2D55' }}>Select Your Plan</h2>
+                  <p className="font-sans text-[14px]" style={{ color: '#64748B' }}>
+                    {isDubai ? 'Choose between the DHA Basic or customise an Enhanced plan' : 'Compare our 3 fixed plans for your emirate'}
                   </p>
                 </div>
 
-                <div className={cn(
-                  'grid gap-4',
-                  getPlans().length === 3 ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2'
-                )}>
-                  {getPlans().map(plan => {
-                    const selected = data.selectedPlan?.id === plan.id
-                    return (
-                      <div key={plan.id}
-                        className={cn(
-                          'relative rounded-2xl border-2 overflow-hidden cursor-pointer transition-all hover:-translate-y-1',
-                          selected ? 'border-[#0D9488] shadow-xl' : 'border-[var(--border-default)] bg-white hover:border-[#2DD4BF]',
-                          plan.recommended ? 'ring-2 ring-[#0D9488] ring-offset-2' : ''
-                        )}
-                        onClick={() => { set('selectedPlan', plan); }}
-                        style={{ backgroundColor: selected ? '#F0FDFA' : 'white' }}>
-
-                        {plan.tag && (
-                          <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full font-sans font-bold text-[10px] text-white"
-                            style={{ backgroundColor: plan.tagColor ?? '#0D9488' }}>
-                            {plan.tag}
+                {isDubai ? (
+                  /* Dubai: Basic (fixed) + Enhanced (configurable) */
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    {/* Basic Plan */}
+                    <div
+                      className={cn('rounded-2xl border-2 overflow-hidden cursor-pointer transition-all hover:-translate-y-1',
+                        data.planType === 'basic' ? 'border-[#0D9488] shadow-xl' : 'border-[#E5EAF0] hover:border-[#2DD4BF]')}
+                      onClick={() => set('planType', 'basic')}
+                      style={{ backgroundColor: data.planType === 'basic' ? '#F0FDFA' : 'white' }}>
+                      <div className="px-5 pt-5 pb-4">
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <span className="inline-block px-2 py-0.5 rounded-md font-sans font-bold text-[9.5px] uppercase tracking-wide mb-2"
+                              style={{ backgroundColor: '#EBF2FA', color: '#0F2D55' }}>DHA Mandatory</span>
+                            <h3 className="font-display font-extrabold text-[20px]" style={{ color: data.planType === 'basic' ? '#0A7A72' : '#0F2D55' }}>
+                              Basic Plan
+                            </h3>
+                            <p className="font-sans text-[12px]" style={{ color: '#64748B' }}>
+                              {data.salaryBand === 'lsb' ? 'Neuron / RSA' : 'ADNIC / Sukoon'}
+                            </p>
                           </div>
-                        )}
-                        {plan.badge && (
-                          <div className="px-4 pt-3 pb-0">
-                            <span className="inline-block px-2 py-0.5 rounded-md font-sans font-bold text-[9.5px] uppercase tracking-wide"
-                              style={{ backgroundColor: '#EBF2FA', color: '#0F2D55' }}>
-                              {plan.badge}
-                            </span>
-                          </div>
-                        )}
-
-                        <div className="p-4 pb-3">
-                          <div className="flex items-start justify-between mb-1">
-                            <div>
-                              <h3 className="font-display font-extrabold text-[18px]"
-                                style={{ color: selected ? '#0A7A72' : '#0F2D55' }}>{plan.name}</h3>
-                              <p className="font-sans text-[11px]" style={{ color: 'var(--text-muted)' }}>{plan.insurer}</p>
-                            </div>
-                            {selected && <CheckCircle2 className="w-5 h-5 mt-0.5 shrink-0" style={{ color: '#0D9488' }} />}
-                          </div>
-
-                          <div className="my-3 py-3 border-y" style={{ borderColor: 'var(--border-subtle)' }}>
-                            <div className="font-display font-extrabold text-[28px] leading-none" style={{ color: '#0F2D55' }}>
-                              AED {plan.premium.toLocaleString()}
-                            </div>
-                            <div className="font-sans text-[11px] mt-0.5" style={{ color: 'var(--text-muted)' }}>per year · self</div>
-                          </div>
-
-                          {/* Benefits breakdown */}
-                          <div className="space-y-2">
-                            <BenefitRow icon={Stethoscope} label="Consultation" value={plan.benefits.consultation} />
-                            <BenefitRow icon={Hospital}    label="In-patient"  value={plan.benefits.inpatient} />
-                            <BenefitRow icon={TrendingUp}  label="Out-patient" value={plan.benefits.outpatient} />
-                            <BenefitRow icon={Pill}        label="Medicine limit"  value={plan.benefits.medicineLimit} />
-                            <BenefitRow icon={Pill}        label="Medicine copay"  value={plan.benefits.medicineCopay} />
-                          </div>
-
-                          {/* Highlights */}
-                          <div className="mt-3 pt-3 border-t space-y-1.5" style={{ borderColor: 'var(--border-subtle)' }}>
-                            {plan.highlights.map(h => (
-                              <div key={h} className="flex items-start gap-2">
-                                <CheckCircle2 className="w-3.5 h-3.5 mt-0.5 shrink-0" style={{ color: '#0D9488' }} />
-                                <span className="font-sans text-[12px]" style={{ color: 'var(--text-secondary)' }}>{h}</span>
-                              </div>
-                            ))}
-                            {plan.benefits.extras?.map(e => (
-                              <div key={e} className="flex items-start gap-2">
-                                <Star className="w-3.5 h-3.5 mt-0.5 shrink-0 fill-current" style={{ color: '#D4A24B' }} />
-                                <span className="font-sans text-[12px]" style={{ color: 'var(--text-secondary)' }}>{e}</span>
-                              </div>
-                            ))}
-                          </div>
+                          {data.planType === 'basic' && <CheckCircle2 className="w-5 h-5 mt-1" style={{ color: '#0D9488' }} />}
                         </div>
-
-                        <div className="px-4 pb-4">
-                          <button
-                            type="button"
-                            onClick={() => { set('selectedPlan', plan); setTimeout(goNext, 150) }}
-                            className="w-full h-10 rounded-xl font-sans font-bold text-[13.5px] transition-all hover:opacity-90"
-                            style={{
-                              background: selected
-                                ? 'linear-gradient(135deg, #0F2D55 0%, #0D9488 100%)'
-                                : '#F4F7FB',
-                              color: selected ? 'white' : '#0F2D55',
-                              border: selected ? 'none' : '1px solid #CBD5E1',
-                            }}>
-                            {selected ? 'Selected ✓' : 'Select Plan'}
-                          </button>
+                        <div className="py-3 border-y mb-3" style={{ borderColor: '#E5EAF0' }}>
+                          <div className="font-display font-extrabold text-[28px] leading-none" style={{ color: '#0F2D55' }}>
+                            AED {(data.salaryBand === 'lsb' ? DUBAI_BASIC_LSB.premium : DUBAI_BASIC_NLSB.premium).toLocaleString()}
+                          </div>
+                          <div className="font-sans text-[11px] mt-0.5" style={{ color: '#64748B' }}>per year · fixed</div>
+                        </div>
+                        <div className="space-y-2 mb-4">
+                          {[
+                            ['Consultation',   'AED 50 copay'],
+                            ['In-patient',     'AED 150,000 / yr'],
+                            ['Out-patient',    'AED 1,500 / yr'],
+                            ['Medicine',       'AED 1,500 / yr'],
+                            ['Medicine copay', '20%'],
+                          ].map(([k, v]) => (
+                            <BenefitRow key={k} label={k} value={v} />
+                          ))}
+                        </div>
+                        <div className="space-y-1.5 pt-3 border-t" style={{ borderColor: '#E5EAF0' }}>
+                          {['DHA-compliant mandatory plan', 'Emergency hospitalisation', 'Basic GP visits in Dubai', 'Direct billing at clinics'].map(h => (
+                            <div key={h} className="flex items-start gap-2">
+                              <CheckCircle2 className="w-3.5 h-3.5 mt-0.5 shrink-0" style={{ color: '#0D9488' }} />
+                              <span className="font-sans text-[12px]" style={{ color: '#475569' }}>{h}</span>
+                            </div>
+                          ))}
                         </div>
                       </div>
-                    )
-                  })}
-                </div>
+                      <div className="px-5 pb-5">
+                        <button type="button" onClick={() => { set('planType', 'basic'); setTimeout(goNext, 150) }}
+                          className="w-full h-10 rounded-xl font-sans font-bold text-[13.5px] transition-all hover:opacity-90"
+                          style={{ background: data.planType === 'basic' ? 'linear-gradient(135deg,#0F2D55,#0D9488)' : '#F4F7FB', color: data.planType === 'basic' ? 'white' : '#0F2D55', border: data.planType === 'basic' ? 'none' : '1px solid #CBD5E1' }}>
+                          {data.planType === 'basic' ? 'Selected ✓' : 'Select Basic Plan'}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Enhanced Plan */}
+                    <div
+                      className={cn('rounded-2xl border-2 overflow-hidden cursor-pointer transition-all hover:-translate-y-1 ring-2 ring-offset-2',
+                        data.planType === 'enhanced' ? 'border-[#0D9488] shadow-xl ring-[#0D9488]' : 'border-[#E5EAF0] hover:border-[#2DD4BF] ring-transparent')}
+                      onClick={() => set('planType', 'enhanced')}
+                      style={{ backgroundColor: data.planType === 'enhanced' ? '#F0FDFA' : 'white' }}>
+                      <div className="px-5 pt-5 pb-4">
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <span className="inline-block px-2.5 py-0.5 rounded-full font-sans font-bold text-[9.5px] text-white mb-2"
+                              style={{ backgroundColor: '#0D9488' }}>Customisable</span>
+                            <h3 className="font-display font-extrabold text-[20px]" style={{ color: data.planType === 'enhanced' ? '#0A7A72' : '#0F2D55' }}>
+                              Enhanced Plan
+                            </h3>
+                            <p className="font-sans text-[12px]" style={{ color: '#64748B' }}>Daman / AXA Gulf / Cigna</p>
+                          </div>
+                          {data.planType === 'enhanced' && <CheckCircle2 className="w-5 h-5 mt-1" style={{ color: '#0D9488' }} />}
+                        </div>
+                        <div className="py-3 border-y mb-3" style={{ borderColor: '#E5EAF0' }}>
+                          <div className="font-display font-extrabold text-[28px] leading-none" style={{ color: '#0F2D55' }}>
+                            AED {(data.salaryBand === 'lsb' ? DUBAI_ENHANCED_BASE_LSB : DUBAI_ENHANCED_BASE_NLSB).toLocaleString()}+
+                          </div>
+                          <div className="font-sans text-[11px] mt-0.5" style={{ color: '#64748B' }}>starting from · you choose coverage</div>
+                        </div>
+                        <div className="space-y-2 mb-4">
+                          {[
+                            ['Consultation',   'You choose'],
+                            ['In-patient',     'You choose'],
+                            ['Out-patient',    'You choose'],
+                            ['Medicine',       'You choose'],
+                            ['Medicine copay', 'You choose'],
+                          ].map(([k, v]) => (
+                            <BenefitRow key={k} label={k} value={v} custom />
+                          ))}
+                        </div>
+                        <div className="space-y-1.5 pt-3 border-t" style={{ borderColor: '#E5EAF0' }}>
+                          {['Pick your own coverage limits', 'Premium adjusts per your choices', 'Wider hospital network', 'Dental & optical top-ups available'].map(h => (
+                            <div key={h} className="flex items-start gap-2">
+                              <Star className="w-3.5 h-3.5 mt-0.5 shrink-0 fill-current" style={{ color: '#D4A24B' }} />
+                              <span className="font-sans text-[12px]" style={{ color: '#475569' }}>{h}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="px-5 pb-5">
+                        <button type="button" onClick={() => { set('planType', 'enhanced'); setTimeout(goNext, 150) }}
+                          className="w-full h-10 rounded-xl font-sans font-bold text-[13.5px] transition-all hover:opacity-90"
+                          style={{ background: data.planType === 'enhanced' ? 'linear-gradient(135deg,#0F2D55,#0D9488)' : '#F4F7FB', color: data.planType === 'enhanced' ? 'white' : '#0F2D55', border: data.planType === 'enhanced' ? 'none' : '1px solid #CBD5E1' }}>
+                          {data.planType === 'enhanced' ? 'Configure Plan →' : 'Customise Enhanced Plan'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  /* Non-Dubai: 3 fixed plan cards */
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    {NON_DUBAI_PLANS.map(plan => {
+                      const sel = data.planType === plan.id
+                      return (
+                        <div key={plan.id}
+                          className={cn('relative rounded-2xl border-2 overflow-hidden cursor-pointer transition-all hover:-translate-y-1',
+                            sel ? 'border-[#0D9488] shadow-xl' : 'border-[#E5EAF0] hover:border-[#2DD4BF]',
+                            plan.recommended ? 'ring-2 ring-[#0D9488] ring-offset-2' : '')}
+                          onClick={() => set('planType', plan.id)}
+                          style={{ backgroundColor: sel ? '#F0FDFA' : 'white' }}>
+                          {plan.tag && (
+                            <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full font-sans font-bold text-[10px] text-white"
+                              style={{ backgroundColor: plan.tagColor ?? '#0D9488' }}>{plan.tag}</div>
+                          )}
+                          <div className="p-4">
+                            <div className="flex items-start justify-between mb-1">
+                              <div>
+                                <h3 className="font-display font-extrabold text-[18px]" style={{ color: sel ? '#0A7A72' : '#0F2D55' }}>{plan.name}</h3>
+                                <p className="font-sans text-[11px]" style={{ color: '#64748B' }}>{plan.insurer}</p>
+                              </div>
+                              {sel && <CheckCircle2 className="w-5 h-5 mt-0.5" style={{ color: '#0D9488' }} />}
+                            </div>
+                            <div className="my-3 py-3 border-y" style={{ borderColor: '#E5EAF0' }}>
+                              <div className="font-display font-extrabold text-[26px] leading-none" style={{ color: '#0F2D55' }}>
+                                AED {plan.premium.toLocaleString()}
+                              </div>
+                              <div className="font-sans text-[11px] mt-0.5" style={{ color: '#64748B' }}>per year · self</div>
+                            </div>
+                            <div className="space-y-1.5">
+                              <BenefitRow label="Consultation"    value={plan.benefits.consultation} />
+                              <BenefitRow label="In-patient"      value={plan.benefits.inpatient} />
+                              <BenefitRow label="Out-patient"     value={plan.benefits.outpatient} />
+                              <BenefitRow label="Medicine limit"  value={plan.benefits.medicineLimit} />
+                              <BenefitRow label="Medicine copay"  value={plan.benefits.medicineCopay} />
+                            </div>
+                            <div className="mt-3 pt-3 border-t space-y-1.5" style={{ borderColor: '#E5EAF0' }}>
+                              {plan.highlights.map(h => (
+                                <div key={h} className="flex items-start gap-2">
+                                  <CheckCircle2 className="w-3.5 h-3.5 mt-0.5 shrink-0" style={{ color: '#0D9488' }} />
+                                  <span className="font-sans text-[12px]" style={{ color: '#475569' }}>{h}</span>
+                                </div>
+                              ))}
+                              {plan.benefits.extras?.map(e => (
+                                <div key={e} className="flex items-start gap-2">
+                                  <Star className="w-3.5 h-3.5 mt-0.5 shrink-0 fill-current" style={{ color: '#D4A24B' }} />
+                                  <span className="font-sans text-[12px]" style={{ color: '#475569' }}>{e}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                          <div className="px-4 pb-4">
+                            <button type="button" onClick={() => { set('planType', plan.id); setTimeout(goNext, 150) }}
+                              className="w-full h-10 rounded-xl font-sans font-bold text-[13.5px] transition-all hover:opacity-90"
+                              style={{ background: sel ? 'linear-gradient(135deg,#0F2D55,#0D9488)' : '#F4F7FB', color: sel ? 'white' : '#0F2D55', border: sel ? 'none' : '1px solid #CBD5E1' }}>
+                              {sel ? 'Selected ✓' : 'Select Plan'}
+                            </button>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
 
                 <div className="mt-4 flex gap-3">
                   <button type="button" onClick={goBack}
                     className="h-12 px-5 rounded-xl border font-sans font-semibold text-[14px] flex items-center gap-1.5 transition-colors hover:bg-[#F4F7FB]"
-                    style={{ borderColor: 'var(--border-medium)', color: 'var(--text-muted)' }}>
+                    style={{ borderColor: '#E5EAF0', color: '#64748B' }}>
                     <ChevronLeft className="w-4 h-4" />
                   </button>
-                  <button type="button" onClick={goNext} disabled={!data.selectedPlan}
-                    className={cn(
-                      'flex-1 h-12 rounded-xl font-sans font-bold text-[14.5px] flex items-center justify-center gap-2 transition-all',
-                      data.selectedPlan ? 'text-white hover:opacity-90 hover:shadow-md hover:-translate-y-0.5' : 'cursor-not-allowed'
-                    )}
-                    style={{
-                      background: data.selectedPlan ? 'linear-gradient(135deg, #0F2D55 0%, #0D9488 100%)' : 'var(--border-default)',
-                      color: data.selectedPlan ? 'white' : 'var(--text-subtle)',
-                    }}>
-                    Generate My Premium <ArrowRight className="w-4 h-4" />
+                  <button type="button" onClick={goNext} disabled={!data.planType}
+                    className={cn('flex-1 h-12 rounded-xl font-sans font-bold text-[14.5px] flex items-center justify-center gap-2 transition-all',
+                      data.planType ? 'text-white hover:opacity-90 hover:shadow-md hover:-translate-y-0.5' : 'cursor-not-allowed')}
+                    style={{ background: data.planType ? 'linear-gradient(135deg,#0F2D55,#0D9488)' : '#E5EAF0', color: data.planType ? 'white' : '#94A3B8' }}>
+                    {isDubai && data.planType === 'enhanced' ? 'Configure Enhanced Plan' : 'Continue'} <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>
               </div>
             )}
 
-            {/* ══ PREMIUM RESULT ══ */}
-            {step === 'premium' && data.selectedPlan && (
-              <PremiumResult data={data} plan={data.selectedPlan} computePremium={computePremium} onBack={goBack} router={router} />
+            {/* ══ ENHANCED CONFIG ══ */}
+            {step === 'enhanced_config' && (
+              <div>
+                <div className="text-center mb-6">
+                  <h2 className="font-display font-bold text-[24px] mb-1" style={{ color: '#0F2D55' }}>Build Your Enhanced Plan</h2>
+                  <p className="font-sans text-[14px]" style={{ color: '#64748B' }}>Select your preferred coverage for each benefit. Premium updates live.</p>
+                </div>
+
+                {/* Live premium badge */}
+                <div className="flex items-center justify-between mb-5 p-4 rounded-2xl"
+                  style={{ background: 'linear-gradient(135deg,#0F2D55,#0D9488)' }}>
+                  <span className="font-sans font-semibold text-[13px] text-white/80">Estimated annual premium</span>
+                  <motion.span
+                    key={basePremium}
+                    initial={{ scale: 1.08, opacity: 0.7 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="font-display font-extrabold text-[22px] text-white">
+                    AED {basePremium.toLocaleString()}
+                  </motion.span>
+                </div>
+
+                <div className="space-y-5">
+                  <ConfigSection title="Consultation" icon={Stethoscope}
+                    options={CONSULTATION_OPTIONS} selected={data.enhancedConfig.consultation}
+                    onSelect={v => setEnhanced('consultation', v)} />
+                  <ConfigSection title="In-patient Limit" icon={Hospital}
+                    options={IP_OPTIONS} selected={data.enhancedConfig.inpatient}
+                    onSelect={v => setEnhanced('inpatient', v)} />
+                  <ConfigSection title="Out-patient Limit" icon={TrendingUp}
+                    options={OP_OPTIONS} selected={data.enhancedConfig.outpatient}
+                    onSelect={v => setEnhanced('outpatient', v)} />
+                  <ConfigSection title="Medicine Limit" icon={Pill}
+                    options={MED_LIMIT_OPTIONS} selected={data.enhancedConfig.medicineLimit}
+                    onSelect={v => setEnhanced('medicineLimit', v)} />
+                  <ConfigSection title="Medicine Copay" icon={Pill}
+                    options={MED_COPAY_OPTIONS} selected={data.enhancedConfig.medicineCopay}
+                    onSelect={v => setEnhanced('medicineCopay', v)} />
+                </div>
+
+                {Object.values(data.enhancedConfig).some(v => v) && (
+                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                    className="mt-4 p-4 rounded-2xl border"
+                    style={{ backgroundColor: '#F0FDFA', borderColor: '#CCFBF1' }}>
+                    <div className="flex items-center justify-between">
+                      <span className="font-sans font-semibold text-[13px]" style={{ color: '#0D9488' }}>Your configured premium</span>
+                      <span className="font-display font-extrabold text-[18px]" style={{ color: '#0F2D55' }}>
+                        AED {basePremium.toLocaleString()} / year
+                      </span>
+                    </div>
+                  </motion.div>
+                )}
+
+                <div className="mt-5 flex gap-3">
+                  <button type="button" onClick={goBack}
+                    className="h-12 px-5 rounded-xl border font-sans font-semibold text-[14px] flex items-center gap-1.5 transition-colors hover:bg-[#F4F7FB]"
+                    style={{ borderColor: '#E5EAF0', color: '#64748B' }}>
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <button type="button" onClick={goNext}
+                    disabled={!Object.values(data.enhancedConfig).every(v => v)}
+                    className={cn('flex-1 h-12 rounded-xl font-sans font-bold text-[14.5px] flex items-center justify-center gap-2 transition-all',
+                      Object.values(data.enhancedConfig).every(v => v) ? 'text-white hover:opacity-90 hover:shadow-md hover:-translate-y-0.5' : 'cursor-not-allowed')}
+                    style={{ background: Object.values(data.enhancedConfig).every(v => v) ? 'linear-gradient(135deg,#0F2D55,#0D9488)' : '#E5EAF0', color: Object.values(data.enhancedConfig).every(v => v) ? 'white' : '#94A3B8' }}>
+                    Proceed to Checkout <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* ══ CHECKOUT (contact + payment) ══ */}
+            {step === 'checkout' && (
+              <CheckoutStep data={data} set={set} totalPremium={totalPremium} basePremium={basePremium}
+                emirateName={emirateName} isDubai={isDubai} onBack={goBack} router={router} />
             )}
 
           </motion.div>
@@ -743,16 +683,10 @@ export default function HealthQuoteFlow() {
 
         {/* Trust strip */}
         <div className="mt-10 grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {[
-            { icon: '🏆', text: 'Best Price Guaranteed' },
-            { icon: '🔒', text: 'Secure & Private' },
-            { icon: '🏥', text: '14+ Insurers' },
-            { icon: '📞', text: 'Claims Assistance' },
-          ].map(({ icon, text }) => (
-            <div key={text} className="bg-white rounded-xl p-3 flex flex-col items-center gap-1.5 border"
-              style={{ borderColor: 'var(--border-default)' }}>
+          {[['🏆','Best Price Guaranteed'],['🔒','Secure & Private'],['🏥','14+ Insurers'],['📞','Claims Assistance']].map(([icon, text]) => (
+            <div key={text} className="bg-white rounded-xl p-3 flex flex-col items-center gap-1.5 border" style={{ borderColor: '#E5EAF0' }}>
               <span className="text-2xl">{icon}</span>
-              <span className="font-sans font-semibold text-[11.5px] text-center" style={{ color: 'var(--text-secondary)' }}>{text}</span>
+              <span className="font-sans font-semibold text-[11.5px] text-center" style={{ color: '#475569' }}>{text}</span>
             </div>
           ))}
         </div>
@@ -761,122 +695,195 @@ export default function HealthQuoteFlow() {
   )
 }
 
-/* ─── Premium Result Component ────────────────────────────── */
-function PremiumResult({
-  data, plan, computePremium, onBack, router
-}: {
+/* ─── Checkout step ──────────────────────────────────────── */
+function CheckoutStep({ data, set, totalPremium, basePremium, emirateName, isDubai, onBack, router }: {
   data: QuoteData
-  plan: Plan
-  computePremium: (p: Plan, d: QuoteData) => number
+  set: <K extends keyof QuoteData>(k: K, v: QuoteData[K]) => void
+  totalPremium: number
+  basePremium: number
+  emirateName: Record<string, string>
+  isDubai: boolean
   onBack: () => void
   router: ReturnType<typeof useRouter>
 }) {
-  const total = computePremium(plan, data)
+  const [paid, setPaid] = useState(false)
+  const stamp = 750
+  const total = totalPremium + stamp
   const monthly = Math.round(total / 12)
+  const valid = data.name.length > 1 && data.email.includes('@') && data.mobile.length >= 8
 
-  const breakdown: { label: string; amount: number }[] = [
-    { label: 'Self', amount: plan.premium },
-  ]
-  if (data.hasSpouse) breakdown.push({ label: 'Spouse', amount: Math.round(plan.premium * 0.85) })
-  for (let i = 0; i < data.children; i++) {
-    breakdown.push({ label: `Child ${i + 1}`, amount: Math.round(plan.premium * 0.55) })
+  if (paid) {
+    return (
+      <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }}
+        className="rounded-3xl border bg-white p-10 text-center" style={{ borderColor: '#E5EAF0' }}>
+        <div className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center"
+          style={{ background: 'linear-gradient(135deg,#0F2D55,#0D9488)' }}>
+          <CheckCircle2 className="w-8 h-8 text-white" />
+        </div>
+        <h2 className="font-display font-bold text-[22px] mb-2" style={{ color: '#0F2D55' }}>Policy Confirmed!</h2>
+        <p className="font-sans text-[14px] mb-2" style={{ color: '#64748B' }}>
+          Your DHA-compliant health insurance certificate will be emailed to <strong>{data.email}</strong> within 24 hours.
+        </p>
+        <p className="font-sans font-bold text-[15px] mb-6" style={{ color: '#0D9488' }}>
+          AED {total.toLocaleString()} charged successfully
+        </p>
+        <a href="/dashboard"
+          className="inline-flex h-12 px-8 rounded-xl font-sans font-bold text-[14px] text-white items-center justify-center"
+          style={{ background: 'linear-gradient(135deg,#0F2D55,#0D9488)' }}>
+          View My Dashboard →
+        </a>
+      </motion.div>
+    )
   }
-  if (data.hasParents) breakdown.push({ label: 'Parents', amount: Math.round(plan.premium * 1.2) })
+
+  const planLabel = isDubai
+    ? (data.planType === 'basic' ? 'Basic DHA Plan' : 'Enhanced Plan')
+    : (data.planType ? data.planType.charAt(0).toUpperCase() + data.planType.slice(1) + ' Plan' : 'Plan')
 
   return (
     <div>
       <div className="text-center mb-6">
-        <div className="text-4xl mb-3">🎉</div>
-        <h2 className="font-display font-bold text-[24px] mb-1" style={{ color: '#0F2D55' }}>Your Premium Quote</h2>
-        <p className="font-sans text-[14px]" style={{ color: 'var(--text-muted)' }}>
-          Based on your selections — no obligation required
+        <div className="text-4xl mb-3">🛒</div>
+        <h2 className="font-display font-bold text-[24px] mb-1" style={{ color: '#0F2D55' }}>Complete Your Purchase</h2>
+        <p className="font-sans text-[14px]" style={{ color: '#64748B' }}>Enter your details and pay securely to get your policy certificate</p>
+      </div>
+
+      {/* Plan summary bar */}
+      <div className="mb-5 rounded-2xl p-4 flex items-center justify-between"
+        style={{ background: 'linear-gradient(135deg,#0F2D55,#0D9488)' }}>
+        <div>
+          <div className="font-sans text-[11px] font-semibold text-white/60 mb-0.5">{emirateName[data.emirate] ?? ''}</div>
+          <div className="font-display font-extrabold text-[18px] text-white">{planLabel}</div>
+        </div>
+        <div className="text-right">
+          <div className="font-display font-extrabold text-[24px] text-white leading-none">
+            AED {total.toLocaleString()}
+          </div>
+          <div className="font-sans text-[11px] text-white/60">incl. stamp duty</div>
+        </div>
+      </div>
+
+      {/* Contact form */}
+      <div className="bg-white rounded-2xl border p-5 mb-4" style={{ borderColor: '#E5EAF0' }}>
+        <p className="font-sans font-bold text-[12px] uppercase tracking-widest mb-4" style={{ color: '#94A3B8' }}>
+          Your Details
+        </p>
+        <div className="space-y-4">
+          <div>
+            <label className="block font-sans font-semibold text-[12px] mb-1.5" style={{ color: '#475569' }}>Full name</label>
+            <input type="text" value={data.name} placeholder="Ahmed Al Mansoori"
+              onChange={e => set('name', e.target.value)}
+              className="w-full h-12 rounded-xl border px-4 font-sans text-[14px] bg-white outline-none"
+              style={{ borderColor: '#E5EAF0' }}
+              onFocus={foc} onBlur={blu} />
+          </div>
+          <div>
+            <label className="block font-sans font-semibold text-[12px] mb-1.5" style={{ color: '#475569' }}>Email address</label>
+            <input type="email" value={data.email} placeholder="you@example.com"
+              onChange={e => set('email', e.target.value)}
+              className="w-full h-12 rounded-xl border px-4 font-sans text-[14px] bg-white outline-none"
+              style={{ borderColor: '#E5EAF0' }}
+              onFocus={foc} onBlur={blu} />
+          </div>
+          <div>
+            <label className="block font-sans font-semibold text-[12px] mb-1.5" style={{ color: '#475569' }}>UAE mobile</label>
+            <div className="flex">
+              <span className="flex items-center px-3.5 border border-r-0 rounded-l-xl font-sans font-semibold text-[13px] shrink-0"
+                style={{ borderColor: '#E5EAF0', backgroundColor: '#F4F7FB', color: '#475569' }}>
+                🇦🇪 +971
+              </span>
+              <input type="tel" value={data.mobile} placeholder="50 123 4567"
+                onChange={e => set('mobile', e.target.value.replace(/\D/g, '').slice(0, 9))}
+                className="flex-1 h-12 rounded-r-xl border px-4 font-sans text-[14px] bg-white outline-none"
+                style={{ borderColor: '#E5EAF0' }}
+                onFocus={foc} onBlur={blu} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Payment summary */}
+      <div className="bg-white rounded-2xl border p-5 mb-4" style={{ borderColor: '#E5EAF0' }}>
+        <p className="font-sans font-bold text-[12px] uppercase tracking-widest mb-4" style={{ color: '#94A3B8' }}>
+          Payment Summary
+        </p>
+        <div className="space-y-2 font-sans text-[13.5px]">
+          <div className="flex justify-between">
+            <span style={{ color: '#64748B' }}>Annual premium</span>
+            <span className="font-semibold" style={{ color: '#0F2D55' }}>AED {totalPremium.toLocaleString()}</span>
+          </div>
+          <div className="flex justify-between">
+            <span style={{ color: '#64748B' }}>≈ Monthly</span>
+            <span className="font-semibold" style={{ color: '#0F2D55' }}>AED {monthly.toLocaleString()}</span>
+          </div>
+          <div className="flex justify-between">
+            <span style={{ color: '#64748B' }}>Stamp duty &amp; levies</span>
+            <span className="font-semibold" style={{ color: '#0F2D55' }}>AED {stamp.toLocaleString()}</span>
+          </div>
+          <div className="flex justify-between items-center pt-3 border-t" style={{ borderColor: '#E5EAF0' }}>
+            <span className="font-display font-bold text-[15px]" style={{ color: '#0F2D55' }}>Total due</span>
+            <span className="font-display font-extrabold text-[22px]" style={{ color: '#0D9488' }}>AED {total.toLocaleString()}</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex items-start gap-2 p-3 rounded-xl mb-5" style={{ backgroundColor: '#F0FDFA' }}>
+        <Shield className="w-4 h-4 shrink-0 mt-0.5" style={{ color: '#0D9488' }} />
+        <p className="font-sans text-[12px]" style={{ color: '#0A7A72' }}>
+          Secure checkout. IA-licensed. DHA-compliant certificate issued within 24 hours.
         </p>
       </div>
 
-      {/* Plan summary card */}
-      <div className="bg-white rounded-2xl border overflow-hidden mb-5" style={{ borderColor: '#0D9488', boxShadow: '0 0 0 2px #CCFBF1' }}>
-        <div className="px-5 py-4 flex items-center justify-between border-b"
-          style={{ background: 'linear-gradient(135deg, #0F2D55 0%, #0D9488 100%)', borderColor: 'transparent' }}>
-          <div>
-            <div className="font-display font-extrabold text-[20px] text-white">{plan.name} Plan</div>
-            <div className="font-sans text-[12px] text-white/70">{plan.insurer}</div>
-          </div>
-          <div className="text-right">
-            <div className="font-display font-extrabold text-[32px] text-white leading-none">
-              AED {total.toLocaleString()}
-            </div>
-            <div className="font-sans text-[12px] text-white/70">per year</div>
-          </div>
-        </div>
-
-        <div className="p-5">
-          <div className="flex items-center justify-between mb-4 pb-4 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
-            <span className="font-sans text-[14px]" style={{ color: 'var(--text-secondary)' }}>Monthly equivalent</span>
-            <span className="font-display font-bold text-[18px]" style={{ color: '#0F2D55' }}>
-              AED {monthly.toLocaleString()} / mo
-            </span>
-          </div>
-
-          {/* Breakdown */}
-          <p className="font-sans font-semibold text-[11px] uppercase tracking-widest mb-3" style={{ color: 'var(--text-subtle)' }}>
-            Premium Breakdown
-          </p>
-          <div className="space-y-2">
-            {breakdown.map(b => (
-              <div key={b.label} className="flex items-center justify-between">
-                <span className="font-sans text-[13px]" style={{ color: 'var(--text-secondary)' }}>{b.label}</span>
-                <span className="font-sans font-semibold text-[13px]" style={{ color: 'var(--text-primary)' }}>
-                  AED {b.amount.toLocaleString()}
-                </span>
-              </div>
-            ))}
-            <div className="flex items-center justify-between pt-2 border-t" style={{ borderColor: 'var(--border-subtle)' }}>
-              <span className="font-sans font-bold text-[14px]" style={{ color: '#0F2D55' }}>Total Annual Premium</span>
-              <span className="font-display font-extrabold text-[16px]" style={{ color: '#0D9488' }}>
-                AED {total.toLocaleString()}
-              </span>
-            </div>
-          </div>
-
-          {/* Benefits summary */}
-          <div className="mt-4 pt-4 border-t" style={{ borderColor: 'var(--border-subtle)' }}>
-            <p className="font-sans font-semibold text-[11px] uppercase tracking-widest mb-3" style={{ color: 'var(--text-subtle)' }}>
-              Key Benefits Included
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                ['Consultation', plan.benefits.consultation],
-                ['In-patient', plan.benefits.inpatient],
-                ['Out-patient', plan.benefits.outpatient],
-                ['Medicine', plan.benefits.medicineLimit],
-              ].map(([k, v]) => (
-                <div key={k} className="p-3 rounded-xl" style={{ backgroundColor: '#F4F7FB' }}>
-                  <div className="font-sans text-[10.5px] font-semibold uppercase tracking-wide mb-0.5"
-                    style={{ color: '#64748B' }}>{k}</div>
-                  <div className="font-sans font-bold text-[12.5px]" style={{ color: '#0F2D55' }}>{v}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* CTA */}
-      <button type="button"
-        onClick={() => router.push('/quote/checkout')}
-        className="w-full h-14 rounded-xl font-sans font-extrabold text-[16px] text-white flex items-center justify-center gap-3 transition-all hover:opacity-90 hover:shadow-xl hover:-translate-y-0.5"
-        style={{ background: 'linear-gradient(135deg, #0F2D55 0%, #0D9488 100%)' }}>
-        Buy This Plan — AED {total.toLocaleString()}/yr
+      <button type="button" disabled={!valid} onClick={() => valid && setPaid(true)}
+        className={cn('w-full h-14 rounded-xl font-sans font-extrabold text-[16px] text-white flex items-center justify-center gap-3 transition-all mb-3',
+          valid ? 'hover:opacity-90 hover:shadow-xl hover:-translate-y-0.5' : 'opacity-50 cursor-not-allowed')}
+        style={{ background: 'linear-gradient(135deg,#0F2D55,#0D9488)' }}>
+        Pay AED {total.toLocaleString()} Securely
         <ArrowRight className="w-5 h-5" />
       </button>
-      <p className="text-center font-sans text-[11.5px] mt-3" style={{ color: 'var(--text-subtle)' }}>
-        IA-licensed · DHA compliant · Certificate in 24 hours
-      </p>
+      {!valid && <p className="text-center font-sans text-[12px] mb-3" style={{ color: '#94A3B8' }}>Please fill in all contact details above</p>}
       <button type="button" onClick={onBack}
-        className="w-full mt-2 h-11 rounded-xl border font-sans font-medium text-[13.5px] flex items-center justify-center gap-2 transition-colors hover:bg-[#F4F7FB]"
-        style={{ borderColor: 'var(--border-medium)', color: 'var(--text-muted)' }}>
-        <ChevronLeft className="w-4 h-4" /> Back to Plans
+        className="w-full h-11 rounded-xl border font-sans font-medium text-[13.5px] flex items-center justify-center gap-2 transition-colors hover:bg-[#F4F7FB]"
+        style={{ borderColor: '#E5EAF0', color: '#64748B' }}>
+        <ChevronLeft className="w-4 h-4" /> Back to Plan Selection
       </button>
+    </div>
+  )
+}
+
+/* ─── ConfigSection ──────────────────────────────────────── */
+function ConfigSection({ title, icon: Icon, options, selected, onSelect }: {
+  title: string
+  icon: React.ElementType
+  options: { id: string; label: string; sub?: string; addOnPct: number }[]
+  selected: string
+  onSelect: (v: string) => void
+}) {
+  return (
+    <div className="bg-white rounded-2xl border p-4" style={{ borderColor: '#E5EAF0' }}>
+      <div className="flex items-center gap-2 mb-3">
+        <Icon className="w-4 h-4" style={{ color: '#0D9488' }} />
+        <span className="font-sans font-bold text-[13.5px]" style={{ color: '#0F2D55' }}>{title}</span>
+        {selected && <CheckCircle2 className="w-3.5 h-3.5 ml-auto shrink-0" style={{ color: '#0D9488' }} />}
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        {options.map(opt => (
+          <button key={opt.id} type="button" onClick={() => onSelect(opt.id)}
+            className="p-2.5 rounded-xl border-2 text-left transition-all hover:-translate-y-0.5"
+            style={{
+              borderColor: selected === opt.id ? '#0D9488' : '#E5EAF0',
+              backgroundColor: selected === opt.id ? '#F0FDFA' : '#F8FAFC',
+            }}>
+            <div className="font-sans font-bold text-[12.5px]" style={{ color: selected === opt.id ? '#0A7A72' : '#0F2D55' }}>{opt.label}</div>
+            {opt.sub && <div className="font-sans text-[10.5px] mt-0.5" style={{ color: '#64748B' }}>{opt.sub}</div>}
+            {opt.addOnPct > 0 && (
+              <div className="font-sans text-[10px] mt-1" style={{ color: '#D4A24B' }}>
+                +{Math.round(opt.addOnPct * 100)}% premium
+              </div>
+            )}
+          </button>
+        ))}
+      </div>
     </div>
   )
 }
@@ -888,7 +895,7 @@ function Shell({ title, sub, icon, children }: { title: string; sub: string; ico
       <div className="text-center mb-6">
         <div className="text-4xl mb-3">{icon}</div>
         <h2 className="font-display font-bold text-[22px] leading-tight mb-1" style={{ color: '#0F2D55' }}>{title}</h2>
-        <p className="font-sans text-[14px]" style={{ color: 'var(--text-muted)' }}>{sub}</p>
+        <p className="font-sans text-[14px]" style={{ color: '#64748B' }}>{sub}</p>
       </div>
       {children}
     </div>
@@ -898,30 +905,15 @@ function Shell({ title, sub, icon, children }: { title: string; sub: string; ico
 function Chip({ children, active, onClick }: { children: React.ReactNode; active: boolean; onClick: () => void }) {
   return (
     <button type="button" onClick={onClick}
-      className={cn(
-        'flex items-center gap-3 p-3.5 rounded-xl border-2 text-left transition-all w-full hover:-translate-y-0.5',
-        active ? 'border-[#0D9488] bg-[#F0FDFA] shadow-sm' : 'border-[var(--border-default)] bg-white hover:border-[#2DD4BF] hover:bg-[#F0FDFA]'
-      )}>
+      className={cn('flex items-center gap-3 p-3.5 rounded-xl border-2 text-left transition-all w-full hover:-translate-y-0.5',
+        active ? 'border-[#0D9488] bg-[#F0FDFA] shadow-sm' : 'border-[#E5EAF0] bg-white hover:border-[#2DD4BF] hover:bg-[#F0FDFA]')}>
       {children}
       {active && <CheckCircle2 className="w-4 h-4 ml-auto shrink-0" style={{ color: '#0D9488' }} />}
     </button>
   )
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <label className="block font-sans font-semibold text-[12px] mb-1.5" style={{ color: 'var(--text-secondary)' }}>
-        {label}
-      </label>
-      {children}
-    </div>
-  )
-}
-
-function Buttons({
-  onNext, disabled, onBack, nextLabel = 'Continue', hideBack
-}: {
+function Buttons({ onNext, disabled, onBack, nextLabel = 'Continue', hideBack }: {
   onNext: () => void; disabled: boolean; onBack?: () => void; nextLabel?: string; hideBack?: boolean
 }) {
   return (
@@ -929,31 +921,26 @@ function Buttons({
       {!hideBack && onBack && (
         <button type="button" onClick={onBack}
           className="h-12 px-5 rounded-xl border font-sans font-semibold text-[14px] flex items-center gap-1.5 transition-colors hover:bg-[#F4F7FB]"
-          style={{ borderColor: 'var(--border-medium)', color: 'var(--text-muted)' }}>
+          style={{ borderColor: '#E5EAF0', color: '#64748B' }}>
           <ChevronLeft className="w-4 h-4" />
         </button>
       )}
       <button type="button" onClick={onNext} disabled={disabled}
-        className={cn(
-          'flex-1 h-12 rounded-xl font-sans font-bold text-[14px] flex items-center justify-center gap-2 transition-all',
-          disabled ? 'cursor-not-allowed' : 'hover:opacity-90 hover:shadow-md hover:-translate-y-0.5'
-        )}
-        style={{
-          background: disabled ? 'var(--border-default)' : 'linear-gradient(135deg, #0F2D55 0%, #0D9488 100%)',
-          color: disabled ? 'var(--text-subtle)' : 'white',
-        }}>
+        className={cn('flex-1 h-12 rounded-xl font-sans font-bold text-[14px] flex items-center justify-center gap-2 transition-all',
+          disabled ? 'cursor-not-allowed' : 'hover:opacity-90 hover:shadow-md hover:-translate-y-0.5')}
+        style={{ background: disabled ? '#E5EAF0' : 'linear-gradient(135deg,#0F2D55,#0D9488)', color: disabled ? '#94A3B8' : 'white' }}>
         {nextLabel} {!disabled && <ArrowRight className="w-4 h-4" />}
       </button>
     </div>
   )
 }
 
-function BenefitRow({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: string }) {
+function BenefitRow({ label, value, custom }: { label: string; value: string; custom?: boolean }) {
   return (
-    <div className="flex items-center gap-2.5">
-      <Icon className="w-3.5 h-3.5 shrink-0" style={{ color: '#0D9488' }} />
+    <div className="flex items-center gap-2">
       <span className="font-sans text-[11.5px] shrink-0" style={{ color: '#64748B' }}>{label}</span>
-      <span className="font-sans font-semibold text-[11.5px] ml-auto text-right" style={{ color: '#0F2D55' }}>{value}</span>
+      <span className="font-sans font-semibold text-[11.5px] ml-auto text-right"
+        style={{ color: custom ? '#D4A24B' : '#0F2D55' }}>{value}</span>
     </div>
   )
 }
@@ -963,6 +950,6 @@ function foc(e: React.FocusEvent<HTMLInputElement>) {
   e.currentTarget.style.boxShadow = '0 0 0 3px rgba(13,148,136,0.12)'
 }
 function blu(e: React.FocusEvent<HTMLInputElement>) {
-  e.currentTarget.style.borderColor = 'var(--border-medium)'
+  e.currentTarget.style.borderColor = '#E5EAF0'
   e.currentTarget.style.boxShadow = 'none'
 }

@@ -28,8 +28,8 @@ function NavItem({ href, icon: Icon, label, onClick }: { href: string; icon: Rea
       onClick={onClick}
       className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-sans font-medium text-[14px] transition-all"
       style={{
-        backgroundColor: active ? 'var(--green-50)' : 'transparent',
-        color: active ? 'var(--green-700)' : 'var(--text-muted)',
+        backgroundColor: active ? '#F0FDFA' : 'transparent',
+        color: active ? '#0D9488' : 'var(--text-muted)',
       }}
     >
       <Icon className="w-[18px] h-[18px] shrink-0" />
@@ -65,7 +65,7 @@ function SidebarContent({ onNav }: { onNav?: () => void }) {
           <div className="flex items-center gap-3 mb-3">
             <div
               className="w-9 h-9 rounded-full flex items-center justify-center font-sans font-bold text-[13px] shrink-0"
-              style={{ backgroundColor: 'var(--green-50)', color: 'var(--green-700)' }}
+              style={{ backgroundColor: '#F0FDFA', color: '#0D9488' }}
             >
               {user.initials}
             </div>
@@ -156,7 +156,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <Logo size={26} />
           <div
             className="w-9 h-9 rounded-full flex items-center justify-center font-sans font-bold text-[12px]"
-            style={{ backgroundColor: 'var(--green-50)', color: 'var(--green-700)' }}
+            style={{ backgroundColor: '#F0FDFA', color: '#0D9488' }}
           >
             {user?.initials ?? '?'}
           </div>
