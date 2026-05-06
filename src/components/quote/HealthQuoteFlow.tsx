@@ -98,6 +98,18 @@ const slide = {
   exit:    { opacity: 0, x: -28, transition: { duration: 0.18 } },
 }
 
+/* ─── Social proof snippets ─────────────────────────────── */
+const SOCIAL_PROOF: Record<string, string> = {
+  'basic':         '🔒 DHA-required for all Dubai visa holders',
+  'enhanced':      '⭐ Chosen by 68% of our Dubai customers',
+  'essential':     '✓ Most affordable option for your emirate',
+  'comprehensive': '🏆 Best-rated plan for families & expats',
+  'lsb':           '💡 Recommended for salary ≤ AED 4,000',
+  'nlsb':          '💡 Recommended for salary > AED 4,000',
+  'self':          '👤 Quickest to purchase — 3 min checkout',
+  'dependent':     '👨‍👩‍👧 Best value when covering your family',
+}
+
 /* ─── Premium calculation ────────────────────────────────── */
 function calcBasePremium(data: QuoteData): number {
   if (data.emirate !== 'dubai') {
@@ -251,6 +263,55 @@ export default function HealthQuoteFlow() {
           </div>
         </div>
       </div>
+
+      {/* Sticky premium bar — appears once plan is selected */}
+      <AnimatePresence>
+        {data.planType && step !== 'checkout' && (
+          <motion.div
+            initial={{ y: -48, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -48, opacity: 0 }}
+            className="sticky top-[56px] z-30 border-b"
+            style={{ backgroundColor: '#0F2D55', borderColor: 'rgba(255,255,255,0.1)' }}
+          >
+            <div className="max-w-[720px] mx-auto px-5 py-2.5 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="font-sans text-[12px] text-white/60">Selected:</span>
+                <span className="font-sans font-bold text-[13px] text-white capitalize">
+                  {isDubai
+                    ? (data.planType === 'basic' ? 'Basic DHA Plan' : 'Enhanced Plan')
+                    : (data.planType.charAt(0).toUpperCase() + data.planType.slice(1) + ' Plan')}
+                </span>
+                {SOCIAL_PROOF[data.planType] && (
+                  <span className="hidden sm:inline font-sans text-[11px]" style={{ color: '#2DD4BF' }}>
+                    · {SOCIAL_PROOF[data.planType].replace(/^[^ ]+ /, '')}
+                  </span>
+                )}
+              </div>
+              {basePremium > 0 && (
+                <div className="flex items-center gap-3">
+                  <div className="text-right">
+                    <span className="font-display font-extrabold text-[15px] text-white">
+                      AED {totalPremium.toLocaleString()}
+                    </span>
+                    <span className="font-sans text-[11px] text-white/50 ml-1">/yr</span>
+                  </div>
+                  {step !== 'plan_type' && step !== 'enhanced_config' && (
+                    <button
+                      type="button"
+                      onClick={() => setStep('checkout')}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-sans font-bold text-[12px] text-white transition-all hover:opacity-90"
+                      style={{ background: 'linear-gradient(135deg,#0D9488,#2DD4BF)' }}
+                    >
+                      Buy Now →
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="max-w-[720px] mx-auto px-5 py-8">
         <AnimatePresence mode="wait">
@@ -575,6 +636,11 @@ export default function HealthQuoteFlow() {
                             </div>
                           </div>
                           <div className="px-4 pb-4">
+                            {plan.recommended && (
+                              <div className="text-center mb-2 font-sans text-[11px] font-semibold" style={{ color: '#0D9488' }}>
+                                ⭐ 68% of customers choose this
+                              </div>
+                            )}
                             <button type="button" onClick={() => { set('planType', plan.id); setTimeout(goNext, 150) }}
                               className="w-full h-10 rounded-xl font-sans font-bold text-[13.5px] transition-all hover:opacity-90"
                               style={{ background: sel ? 'linear-gradient(135deg,#0F2D55,#0D9488)' : '#F4F7FB', color: sel ? 'white' : '#0F2D55', border: sel ? 'none' : '1px solid #CBD5E1' }}>
@@ -606,9 +672,20 @@ export default function HealthQuoteFlow() {
             {/* ══ ENHANCED CONFIG ══ */}
             {step === 'enhanced_config' && (
               <div>
-                <div className="text-center mb-6">
+                <div className="text-center mb-5">
                   <h2 className="font-display font-bold text-[24px] mb-1" style={{ color: '#0F2D55' }}>Build Your Enhanced Plan</h2>
-                  <p className="font-sans text-[14px]" style={{ color: '#64748B' }}>Select your preferred coverage for each benefit. Premium updates live.</p>
+                  <p className="font-sans text-[14px] mb-3" style={{ color: '#64748B' }}>Select your preferred coverage for each benefit. Premium updates live.</p>
+                  <button
+                    type="button"
+                    onClick={() => setData(prev => ({
+                      ...prev,
+                      enhancedConfig: { consultation: 'gp_spec', inpatient: '500k', outpatient: '7.5k', medicineLimit: '3k', medicineCopay: '15' }
+                    }))}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full font-sans font-semibold text-[12.5px] transition-all hover:opacity-90"
+                    style={{ backgroundColor: '#EBF2FA', color: '#0F2D55', border: '1px solid #CBD5E1' }}
+                  >
+                    ✨ Apply Smart Defaults (Most Popular)
+                  </button>
                 </div>
 
                 {/* Live premium badge */}

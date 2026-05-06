@@ -105,11 +105,11 @@ export default function HeroSection() {
   const router = useRouter()
 
   return (
-    <section className="relative">
-      {/* Full-width navy top band */}
+    <section className="relative overflow-hidden">
+      {/* Full-width navy background — covers entire section */}
       <div
-        className="absolute inset-x-0 top-0"
-        style={{ height: '480px', background: 'linear-gradient(155deg, #060F1E 0%, #0B2545 55%, #0B3D6B 100%)' }}
+        className="absolute inset-0"
+        style={{ background: 'linear-gradient(155deg, #060F1E 0%, #0B2545 55%, #0B3D6B 100%)' }}
       >
         <svg className="absolute inset-0 w-full h-full opacity-[0.025]" xmlns="http://www.w3.org/2000/svg">
           <defs>
@@ -303,7 +303,7 @@ export default function HeroSection() {
         </div>
       </div>
 
-      <div className="h-12 relative" style={{ background: 'linear-gradient(to bottom, #0B2545, var(--page-bg))' }} />
+      <div className="h-16 relative" style={{ background: 'linear-gradient(to bottom, #0B2545 0%, var(--page-bg) 100%)' }} />
     </section>
   )
 }

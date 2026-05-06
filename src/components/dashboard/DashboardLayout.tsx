@@ -2,22 +2,26 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
+
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard, Shield, FileText, Clock, FolderOpen, Settings,
-  LogOut, Menu, X, Bell, ChevronRight,
+  LogOut, Menu, X, ChevronRight, RefreshCw, Plus, BarChart2,
 } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import Logo from '@/components/ui/Logo'
 
 const NAV = [
-  { label: 'Overview',      href: '/dashboard',            icon: LayoutDashboard },
-  { label: 'My Policies',   href: '/dashboard/policies',   icon: Shield },
-  { label: 'Claims',        href: '/dashboard/claims',     icon: FileText },
-  { label: 'Quote History', href: '/dashboard/quotes',     icon: Clock },
-  { label: 'Documents',     href: '/dashboard/documents',  icon: FolderOpen },
-  { label: 'Settings',      href: '/dashboard/settings',   icon: Settings },
+  { label: 'Overview',          href: '/dashboard',            icon: LayoutDashboard },
+  { label: 'My Policies',       href: '/dashboard/policies',   icon: Shield },
+  { label: 'Quote History',     href: '/dashboard/quotes',     icon: Clock },
+  { label: 'Renewal List',      href: '/dashboard/renewals',   icon: RefreshCw },
+  { label: 'Claims',            href: '/dashboard/claims',     icon: FileText },
+  { label: 'Documents',         href: '/dashboard/documents',  icon: FolderOpen },
+  { label: 'Settings',          href: '/dashboard/settings',   icon: Settings },
 ]
+
+const NAV_CTA = { label: 'New Quote', href: '/quote/health', icon: Plus }
 
 function NavItem({ href, icon: Icon, label, onClick }: { href: string; icon: React.ElementType; label: string; onClick?: () => void }) {
   const pathname = usePathname()
@@ -54,7 +58,19 @@ function SidebarContent({ onNav }: { onNav?: () => void }) {
         <Logo size={30} />
       </div>
 
-      <nav className="flex-1 px-3 py-4 flex flex-col gap-0.5 overflow-y-auto">
+      <div className="px-3 pt-4 pb-2">
+        <Link
+          href={NAV_CTA.href}
+          onClick={onNav}
+          className="flex items-center justify-center gap-2 w-full h-10 rounded-xl font-sans font-bold text-[13px] text-white transition-all hover:opacity-90"
+          style={{ background: 'linear-gradient(135deg,#0F2D55,#0D9488)' }}
+        >
+          <NAV_CTA.icon className="w-4 h-4" />
+          {NAV_CTA.label}
+        </Link>
+      </div>
+
+      <nav className="flex-1 px-3 py-2 flex flex-col gap-0.5 overflow-y-auto">
         {NAV.map((item) => (
           <NavItem key={item.href} {...item} onClick={onNav} />
         ))}
