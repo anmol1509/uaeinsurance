@@ -6,7 +6,7 @@ export interface AuthUser {
   name: string
   email: string
   phone: string
-  role: 'customer' | 'super_admin' | 'insurer' | 'broker'
+  role: 'super_admin' | 'insurer' | 'broker'
   initials: string
   joinedAt: string
   kycStatus: 'verified' | 'pending' | 'unverified'
@@ -15,7 +15,6 @@ export interface AuthUser {
 }
 
 export const ROLE_REDIRECT: Record<AuthUser['role'], string> = {
-  customer:    '/dashboard',
   super_admin: '/admin',
   insurer:     '/insurer',
   broker:      '/broker',
@@ -30,11 +29,6 @@ interface AuthStore {
 }
 
 const MOCK_USERS: Record<string, AuthUser> = {
-  'customer@demo.com': {
-    id: 'usr_001', name: 'Ahmed Al Mansoori', email: 'customer@demo.com',
-    phone: '0501234567', role: 'customer', initials: 'AA',
-    joinedAt: '2024-03-15', kycStatus: 'verified',
-  },
   // Super Admin
   'admin@insureae.com': {
     id: 'sa_001', name: 'Khalid Al Hashimi', email: 'admin@insureae.com',
@@ -88,7 +82,7 @@ export const useAuthStore = create<AuthStore>()(
           name,
           email,
           phone,
-          role: 'customer',
+          role: 'broker',
           initials,
           joinedAt: new Date().toISOString().split('T')[0],
           kycStatus: 'pending',

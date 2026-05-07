@@ -60,9 +60,8 @@ export default function LoginPage() {
     }
   }
 
-  const fillDemo = (type: 'customer' | 'super_admin' | 'insurer' | 'broker') => {
+  const fillDemo = (type: 'super_admin' | 'insurer' | 'broker') => {
     const creds: Record<string, [string, string]> = {
-      customer:    ['customer@demo.com',   'demo1234'],
       super_admin: ['admin@insureae.com',  'admin123'],
       insurer:     ['portal@daman.ae',     'daman123'],
       broker:      ['broker@insureae.com', 'broker123'],
@@ -106,14 +105,13 @@ export default function LoginPage() {
             Welcome back
           </h1>
           <p className="font-sans text-[14px] mb-5" style={{ color: 'rgba(255,255,255,0.45)' }}>
-            Sign in as Customer, Broker, Insurer or Admin
+            Sign in as Broker, Insurer or Admin
           </p>
 
           {/* Demo autofill */}
-          <div className="grid grid-cols-2 gap-2 mb-6">
+          <div className="grid grid-cols-3 gap-2 mb-6">
             {([
-              ['customer',    '👤 Customer'],
-              ['super_admin', '🛡️ Super Admin'],
+              ['super_admin', '🛡️ Admin'],
               ['insurer',     '🏥 Insurer'],
               ['broker',      '🤝 Broker'],
             ] as const).map(([type, label]) => (
