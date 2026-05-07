@@ -195,12 +195,162 @@ function AdminBell() {
   )
 }
 
+/* ─── Insurer broker data mapping ────────────────────────── */
+const INSURER_BROKERS: Record<string, typeof BROKERS> = {
+  INS001: BROKERS.filter(b => ['BR001','BR002'].includes(b.id)),
+  INS002: BROKERS.filter(b => ['BR002','BR003'].includes(b.id)),
+  INS003: BROKERS.filter(b => ['BR003','BR004'].includes(b.id)),
+  INS004: BROKERS.filter(b => ['BR001','BR004'].includes(b.id)),
+  INS005: BROKERS.filter(b => ['BR002','BR003'].includes(b.id)),
+  INS006: BROKERS.filter(b => ['BR001','BR003','BR004'].includes(b.id)),
+}
+
+function InsurerDetailPanel({ insurer, brokers, onClose }: {
+  insurer: typeof INSURERS[0]
+  brokers: typeof BROKERS
+  onClose: () => void
+}) {
+  const total = brokers.reduce((sum, b) => sum + b.policies, 0)
+  return (
+    <>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        className="fixed inset-0 z-40 bg-black/50" onClick={onClose} />
+      <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
+        transition={{ type: 'spring', stiffness: 320, damping: 32 }}
+        className="fixed right-0 inset-y-0 z-50 w-full sm:w-[480px] bg-white flex flex-col overflow-hidden shadow-2xl">
+
+        {/* Header */}
+        <div className="px-6 py-5 border-b flex items-start gap-3" style={{ borderColor: '#E5EAF0' }}>
+          <div className="w-12 h-12 rounded-2xl flex items-center justify-center font-sans font-bold text-[14px] text-white shrink-0"
+            style={{ background: 'linear-gradient(135deg,#0F2D55,#0D9488)' }}>
+            {insurer.name.slice(0, 2).toUpperCase()}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <h2 className="font-display font-bold text-[20px]" style={{ color: '#0F2D55' }}>{insurer.name}</h2>
+              <StatusBadge status={insurer.status} />
+            </div>
+            <p className="font-sans text-[12px]" style={{ color: '#64748B' }}>{insurer.license} · {insurer.plans} plans · {insurer.policies} policies</p>
+          </div>
+          <button type="button" onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-[#F4F7FB] shrink-0">
+            <X className="w-4 h-4 text-[#64748B]" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          {/* KPI strip */}
+          <div className="grid grid-cols-3 gap-3">
+            {[
+              { label: 'GWP', value: insurer.gwp > 0 ? `AED ${(insurer.gwp / 1000).toFixed(0)}K` : '—', color: '#0D9488' },
+              { label: 'Claims', value: String(insurer.claims), color: '#EF4444' },
+              { label: 'Loss Ratio', value: insurer.ratio, color: insurer.ratio !== '—' && parseInt(insurer.ratio) > 72 ? '#EF4444' : '#0D9488' },
+            ].map(s => (
+              <div key={s.label} className="rounded-xl p-4 text-center" style={{ backgroundColor: '#F8FAFC', border: '1px solid #E5EAF0' }}>
+                <p className="font-display font-extrabold text-[20px]" style={{ color: s.color }}>{s.value}</p>
+                <p className="font-sans text-[11px] mt-0.5" style={{ color: '#94A3B8' }}>{s.label}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Broker performance */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <p className="font-sans font-bold text-[13px]" style={{ color: '#0F2D55' }}>
+                Brokers on Network ({brokers.length})
+              </p>
+              <span className="font-sans text-[12px]" style={{ color: '#94A3B8' }}>{total} policies total</span>
+            </div>
+            {brokers.length === 0 ? (
+              <div className="text-center py-10 rounded-xl" style={{ backgroundColor: '#F8FAFC', border: '1px solid #E5EAF0' }}>
+                <p className="font-sans text-[13px]" style={{ color: '#94A3B8' }}>No brokers linked to this insurer yet</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {brokers.map(b => {
+                  const share = total > 0 ? Math.round((b.policies / total) * 100) : 0
+                  return (
+                    <div key={b.id} className="rounded-xl p-4" style={{ backgroundColor: '#F8FAFC', border: '1px solid #E5EAF0' }}>
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-9 h-9 rounded-full flex items-center justify-center font-sans font-bold text-[11px] text-white shrink-0"
+                          style={{ background: 'linear-gradient(135deg,#D4A24B,#B87C1E)' }}>
+                          {b.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-sans font-bold text-[13px]" style={{ color: '#0F2D55' }}>{b.name}</p>
+                          <p className="font-sans text-[11px]" style={{ color: '#94A3B8' }}>{b.company} · {b.license}</p>
+                        </div>
+                        <StatusBadge status={b.status} />
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 mb-3">
+                        {[
+                          { label: 'Clients', value: b.clients },
+                          { label: 'Policies', value: b.policies },
+                          { label: 'Commission', value: `AED ${b.commission > 0 ? (b.commission / 1000).toFixed(1) + 'K' : '—'}` },
+                        ].map(m => (
+                          <div key={m.label} className="text-center">
+                            <p className="font-display font-bold text-[16px]" style={{ color: '#0F2D55' }}>{m.value}</p>
+                            <p className="font-sans text-[10px]" style={{ color: '#94A3B8' }}>{m.label}</p>
+                          </div>
+                        ))}
+                      </div>
+                      {/* Share of policies bar */}
+                      <div>
+                        <div className="flex justify-between mb-1">
+                          <span className="font-sans text-[10px]" style={{ color: '#94A3B8' }}>Share of insurer&apos;s policies</span>
+                          <span className="font-sans font-semibold text-[10px]" style={{ color: '#0D9488' }}>{share}%</span>
+                        </div>
+                        <div className="h-1.5 rounded-full" style={{ backgroundColor: '#E5EAF0' }}>
+                          <div className="h-1.5 rounded-full transition-all" style={{ width: `${share}%`, background: 'linear-gradient(90deg,#0D9488,#0F2D55)' }} />
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Insurer plan list */}
+          <div>
+            <p className="font-sans font-bold text-[13px] mb-3" style={{ color: '#0F2D55' }}>Active Plans ({insurer.plans})</p>
+            <div className="space-y-2">
+              {['Essential', 'Silk Road', 'Pearl', 'Gold', 'Platinum', 'Diamond'].slice(0, insurer.plans).map(plan => (
+                <div key={plan} className="flex items-center justify-between rounded-xl px-4 py-3" style={{ backgroundColor: '#F8FAFC', border: '1px solid #E5EAF0' }}>
+                  <span className="font-sans font-semibold text-[13px]" style={{ color: '#0F2D55' }}>{plan}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 rounded-full font-sans font-semibold text-[11px]" style={{ backgroundColor: '#DCFCE7', color: '#166534' }}>Active</span>
+                    <button className="h-7 px-2.5 rounded-lg font-sans font-semibold text-[11px]" style={{ backgroundColor: '#EBF2FA', color: '#0F2D55' }}>Edit Pricing</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="px-6 py-4 border-t" style={{ borderColor: '#E5EAF0' }}>
+          <div className="flex gap-3">
+            <button type="button" onClick={onClose}
+              className="flex-1 h-10 rounded-xl border font-sans font-semibold text-[13px]"
+              style={{ borderColor: '#E5EAF0', color: '#475569' }}>Close</button>
+            {insurer.status === 'pending' && (
+              <button type="button"
+                className="flex-1 h-10 rounded-xl font-sans font-bold text-[13px] text-white"
+                style={{ backgroundColor: '#0D9488' }}>Approve Insurer</button>
+            )}
+          </div>
+        </div>
+      </motion.div>
+    </>
+  )
+}
+
 export default function SuperAdminDashboard() {
   const [tab, setTab] = useState<Tab>('overview')
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [searchPolicies, setSearchPolicies] = useState('')
   const [searchBrokers, setSearchBrokers] = useState('')
   const [searchInsurers, setSearchInsurers] = useState('')
+  const [selectedInsurerId, setSelectedInsurerId] = useState<string | null>(null)
   const { user, logout } = useAuthStore()
   const router = useRouter()
 
@@ -218,9 +368,23 @@ export default function SuperAdminDashboard() {
   const filteredInsurers = useMemo(() =>
     INSURERS.filter(i => i.name.toLowerCase().includes(searchInsurers.toLowerCase())), [searchInsurers])
 
+  const selectedInsurer = selectedInsurerId ? INSURERS.find(i => i.id === selectedInsurerId) : null
+  const selectedInsurerBrokers = selectedInsurerId ? (INSURER_BROKERS[selectedInsurerId] ?? []) : []
+
   return (
     <div className="flex h-screen overflow-hidden" style={{ backgroundColor: '#F4F7FB' }}>
       <Sidebar tab={tab} setTab={setTab} user={user} onLogout={handleLogout} open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+
+      {/* Insurer detail panel */}
+      <AnimatePresence>
+        {selectedInsurer && (
+          <InsurerDetailPanel
+            insurer={selectedInsurer}
+            brokers={selectedInsurerBrokers}
+            onClose={() => setSelectedInsurerId(null)}
+          />
+        )}
+      </AnimatePresence>
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Topbar */}
@@ -390,7 +554,11 @@ export default function SuperAdminDashboard() {
                             <td className="px-4 py-3 font-sans text-[13px]" style={{ color: '#64748B' }}>{ins.ratio}</td>
                             <td className="px-4 py-3">
                               <div className="flex gap-1.5">
-                                <button className="h-7 px-3 rounded-lg font-sans font-semibold text-[11px]" style={{ backgroundColor: '#EBF2FA', color: '#0F2D55' }}>Manage</button>
+                                <button onClick={() => setSelectedInsurerId(ins.id)}
+                                  className="h-7 px-3 rounded-lg font-sans font-semibold text-[11px] flex items-center gap-1 hover:bg-[#EBF2FA] transition-colors"
+                                  style={{ backgroundColor: '#EBF2FA', color: '#0F2D55' }}>
+                                  View Brokers
+                                </button>
                                 {ins.status === 'pending' && (
                                   <button className="h-7 px-3 rounded-lg font-sans font-semibold text-[11px]" style={{ backgroundColor: '#DCFCE7', color: '#166534' }}>Approve</button>
                                 )}
