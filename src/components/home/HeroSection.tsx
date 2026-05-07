@@ -190,6 +190,15 @@ export default function HeroSection() {
                   +6 more
                 </span>
               </div>
+              {/* Regulator badges */}
+              <div className="flex items-center gap-2 mt-3">
+                {['DHA Licensed', 'HAAD Approved', 'IA Regulated'].map(b => (
+                  <span key={b} className="flex items-center gap-1 px-2.5 py-1 rounded-full font-sans font-semibold text-[9.5px]"
+                    style={{ backgroundColor: 'rgba(212,162,75,0.12)', border: '1px solid rgba(212,162,75,0.25)', color: '#F5CC72' }}>
+                    ✓ {b}
+                  </span>
+                ))}
+              </div>
             </motion.div>
 
             {/* Checkmarks */}

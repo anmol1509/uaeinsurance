@@ -1,9 +1,9 @@
 'use client'
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  LayoutDashboard, FileText, AlertCircle, Users, BarChart2,
-  Settings, LogOut, TrendingUp, TrendingDown, Menu, Shield, Download,
+  LayoutDashboard, FileText, AlertCircle, Users,
+  Settings, LogOut, TrendingUp, TrendingDown, Menu, Shield, Download, Bell, X, Search,
 } from 'lucide-react'
 import Logo from '@/components/ui/Logo'
 import { useAuthStore } from '@/store/authStore'
@@ -68,6 +68,32 @@ function StatusBadge({ status }: { status: string }) {
   return <span className="px-2.5 py-0.5 rounded-full font-sans font-semibold text-[11px] capitalize" style={{ backgroundColor: bg, color: text }}>{status}</span>
 }
 
+function ClaimTypeBadge({ type }: { type: string }) {
+  const map: Record<string, [string, string]> = {
+    Inpatient:  ['#EFF6FF','#1D4ED8'],
+    Outpatient: ['#F0FDFA','#0A7A72'],
+    Pharmacy:   ['#DCFCE7','#166534'],
+    Dental:     ['#F5F3FF','#6D28D9'],
+    Specialist: ['#FEF3C7','#92400E'],
+    Maternity:  ['#FDF2F8','#9D174D'],
+  }
+  const [bg, text] = map[type] ?? ['#F1F5F9','#475569']
+  return <span className="px-2.5 py-0.5 rounded-full font-sans font-semibold text-[11px]" style={{ backgroundColor: bg, color: text }}>{type}</span>
+}
+
+function SearchInput({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder: string }) {
+  return (
+    <div className="relative">
+      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#94A3B8]" />
+      <input type="text" value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
+        className="h-9 pl-9 pr-4 rounded-xl border font-sans text-[13px] outline-none w-full sm:w-56 transition-all"
+        style={{ borderColor: '#E5EAF0', backgroundColor: '#F8FAFC' }}
+        onFocus={e => e.currentTarget.style.borderColor = '#0D9488'}
+        onBlur={e => e.currentTarget.style.borderColor = '#E5EAF0'} />
+    </div>
+  )
+}
+
 function Sidebar({ tab, setTab, user, onLogout, open, onClose }: {
   tab: Tab; setTab: (t: Tab) => void; user: { name: string; initials: string; company?: string } | null
   onLogout: () => void; open: boolean; onClose: () => void
@@ -112,9 +138,21 @@ function Sidebar({ tab, setTab, user, onLogout, open, onClose }: {
 export default function InsurerDashboard() {
   const [tab, setTab] = useState<Tab>('overview')
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [searchPolicies, setSearchPolicies] = useState('')
+  const [searchClaims, setSearchClaims] = useState('')
   const { user, logout } = useAuthStore()
   const router = useRouter()
   const handleLogout = () => { logout(); router.push('/login') }
+
+  const filteredPolicies = useMemo(() =>
+    POLICIES.filter(p => p.client.toLowerCase().includes(searchPolicies.toLowerCase()) ||
+      p.plan.toLowerCase().includes(searchPolicies.toLowerCase()) ||
+      p.id.toLowerCase().includes(searchPolicies.toLowerCase())), [searchPolicies])
+
+  const filteredClaims = useMemo(() =>
+    CLAIMS.filter(c => c.member.toLowerCase().includes(searchClaims.toLowerCase()) ||
+      c.type.toLowerCase().includes(searchClaims.toLowerCase()) ||
+      c.id.toLowerCase().includes(searchClaims.toLowerCase())), [searchClaims])
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ backgroundColor: '#F4F7FB' }}>
@@ -236,11 +274,14 @@ export default function InsurerDashboard() {
 
               {tab === 'policies' && (
                 <div className="bg-white rounded-2xl border overflow-hidden" style={{ borderColor: '#E5EAF0' }}>
-                  <div className="px-5 py-4 border-b flex items-center justify-between" style={{ borderColor: '#F1F5F9' }}>
-                    <p className="font-sans font-bold text-[14px]" style={{ color: '#0F2D55' }}>Policies Sold via InsureAE ({POLICIES.length})</p>
-                    <button className="flex items-center gap-1.5 h-9 px-4 rounded-xl font-sans font-semibold text-[12.5px]" style={{ backgroundColor: '#F1F5F9', color: '#475569' }}>
-                      <Download className="w-3.5 h-3.5" /> Export
-                    </button>
+                  <div className="px-5 py-4 border-b flex items-center justify-between gap-3 flex-wrap" style={{ borderColor: '#F1F5F9' }}>
+                    <p className="font-sans font-bold text-[14px]" style={{ color: '#0F2D55' }}>Policies Sold via InsureAE ({filteredPolicies.length})</p>
+                    <div className="flex items-center gap-2">
+                      <SearchInput value={searchPolicies} onChange={setSearchPolicies} placeholder="Search policies…" />
+                      <button className="flex items-center gap-1.5 h-9 px-4 rounded-xl font-sans font-semibold text-[12.5px]" style={{ backgroundColor: '#F1F5F9', color: '#475569' }}>
+                        <Download className="w-3.5 h-3.5" /> Export
+                      </button>
+                    </div>
                   </div>
                   <div className="overflow-x-auto">
                     <table className="w-full">
@@ -250,7 +291,7 @@ export default function InsurerDashboard() {
                         ))}
                       </tr></thead>
                       <tbody className="divide-y" style={{ borderColor: '#F1F5F9' }}>
-                        {POLICIES.map(p => (
+                        {filteredPolicies.map(p => (
                           <tr key={p.id} className="hover:bg-[#F8FAFC] transition-colors">
                             <td className="px-4 py-3 font-sans font-semibold text-[12px]" style={{ color: '#0D9488' }}>{p.id}</td>
                             <td className="px-4 py-3 font-sans font-semibold text-[13px]" style={{ color: '#0F2D55' }}>{p.client}</td>
@@ -270,12 +311,15 @@ export default function InsurerDashboard() {
 
               {tab === 'claims' && (
                 <div className="bg-white rounded-2xl border overflow-hidden" style={{ borderColor: '#E5EAF0' }}>
-                  <div className="px-5 py-4 border-b flex items-center justify-between" style={{ borderColor: '#F1F5F9' }}>
-                    <p className="font-sans font-bold text-[14px]" style={{ color: '#0F2D55' }}>Claims ({CLAIMS.length})</p>
-                    <div className="flex gap-2">
+                  <div className="px-5 py-4 border-b flex items-center justify-between gap-3 flex-wrap" style={{ borderColor: '#F1F5F9' }}>
+                    <div className="flex items-center gap-3">
+                      <p className="font-sans font-bold text-[14px]" style={{ color: '#0F2D55' }}>Claims ({filteredClaims.length})</p>
                       <span className="flex items-center gap-1 px-2.5 py-1 rounded-full font-sans text-[11px] font-semibold" style={{ backgroundColor: '#FEF3C7', color: '#92400E' }}>
                         <AlertCircle className="w-3 h-3" /> {CLAIMS.filter(c=>c.status==='pending').length} pending
                       </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <SearchInput value={searchClaims} onChange={setSearchClaims} placeholder="Search claims…" />
                     </div>
                   </div>
                   <div className="overflow-x-auto">
@@ -286,12 +330,12 @@ export default function InsurerDashboard() {
                         ))}
                       </tr></thead>
                       <tbody className="divide-y" style={{ borderColor: '#F1F5F9' }}>
-                        {CLAIMS.map(c => (
+                        {filteredClaims.map(c => (
                           <tr key={c.id} className="hover:bg-[#F8FAFC] transition-colors">
                             <td className="px-4 py-3 font-sans font-semibold text-[12px]" style={{ color: '#0D9488' }}>{c.id}</td>
                             <td className="px-4 py-3 font-sans text-[12px]" style={{ color: '#64748B' }}>{c.policy}</td>
                             <td className="px-4 py-3 font-sans font-semibold text-[13px]" style={{ color: '#0F2D55' }}>{c.member}</td>
-                            <td className="px-4 py-3 font-sans text-[12px]" style={{ color: '#64748B' }}>{c.type}</td>
+                            <td className="px-4 py-3"><ClaimTypeBadge type={c.type} /></td>
                             <td className="px-4 py-3 font-sans font-bold text-[13px]" style={{ color: '#0F2D55' }}>{c.amount.toLocaleString()}</td>
                             <td className="px-4 py-3 font-sans text-[12px]" style={{ color: '#64748B' }}>{c.tpa}</td>
                             <td className="px-4 py-3"><StatusBadge status={c.status} /></td>

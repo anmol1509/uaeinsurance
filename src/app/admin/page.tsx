@@ -1,10 +1,10 @@
 'use client'
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard, Building2, Users, FileText, DollarSign,
   Settings, LogOut, ChevronDown, TrendingUp, AlertCircle,
-  CheckCircle2, Clock, MoreHorizontal, Shield, Menu, X,
+  CheckCircle2, Clock, MoreHorizontal, Shield, Menu, X, Search, Bell,
 } from 'lucide-react'
 import Logo from '@/components/ui/Logo'
 import { useAuthStore } from '@/store/authStore'
@@ -132,13 +132,91 @@ function Sidebar({ tab, setTab, user, onLogout, open, onClose }: {
   )
 }
 
+function SearchInput({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder: string }) {
+  return (
+    <div className="relative">
+      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5" style={{ color: 'rgba(255,255,255,0.35)' }} />
+      <input type="text" value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
+        className="h-9 pl-9 pr-4 rounded-xl font-sans text-[13px] outline-none w-full sm:w-52 transition-all"
+        style={{ border: '1px solid rgba(255,255,255,0.1)', backgroundColor: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.8)' }} />
+    </div>
+  )
+}
+
+const ADMIN_NOTIFICATIONS = [
+  { id: 1, msg: 'New broker registration: Emirates Insurance Brokers', time: '1h ago', read: false },
+  { id: 2, msg: 'GIG Gulf submitted plan pricing for review', time: '3h ago', read: false },
+  { id: 3, msg: '5 policies issued today — GWP AED 8,400', time: '5h ago', read: false },
+  { id: 4, msg: 'Broker BR-DXB-0891 approved by compliance', time: '1d ago', read: true },
+]
+
+function AdminBell() {
+  const [open, setOpen] = useState(false)
+  const [notifs, setNotifs] = useState(ADMIN_NOTIFICATIONS)
+  const unread = notifs.filter(n => !n.read).length
+  return (
+    <div className="relative">
+      <button type="button" onClick={() => setOpen(o => !o)}
+        className="relative w-9 h-9 rounded-xl flex items-center justify-center transition-colors"
+        style={{ border: '1px solid rgba(255,255,255,0.1)', backgroundColor: 'rgba(255,255,255,0.07)' }}>
+        <Bell className="w-4 h-4" style={{ color: 'rgba(255,255,255,0.7)' }} />
+        {unread > 0 && (
+          <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full font-sans font-bold text-[9px] flex items-center justify-center text-white"
+            style={{ backgroundColor: '#EF4444' }}>{unread}</span>
+        )}
+      </button>
+      <AnimatePresence>
+        {open && (
+          <>
+            <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+            <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+              className="absolute right-0 top-11 z-50 w-80 rounded-2xl border shadow-xl overflow-hidden"
+              style={{ backgroundColor: '#131B2E', borderColor: 'rgba(255,255,255,0.1)' }}>
+              <div className="px-4 py-3 border-b" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+                <p className="font-sans font-bold text-[13px] text-white">Platform Notifications</p>
+              </div>
+              <div className="max-h-72 overflow-y-auto divide-y" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
+                {notifs.map(n => (
+                  <div key={n.id} className="flex items-start gap-3 px-4 py-3 cursor-pointer hover:bg-white/5"
+                    onClick={() => setNotifs(prev => prev.map(x => x.id === n.id ? { ...x, read: true } : x))}>
+                    <div className="w-2 h-2 rounded-full shrink-0 mt-2" style={{ backgroundColor: n.read ? 'rgba(255,255,255,0.15)' : '#2DD4BF' }} />
+                    <div>
+                      <p className="font-sans text-[12px] text-white/80" style={{ fontWeight: n.read ? 400 : 600 }}>{n.msg}</p>
+                      <p className="font-sans text-[10px] mt-0.5" style={{ color: 'rgba(255,255,255,0.3)' }}>{n.time}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
 export default function SuperAdminDashboard() {
   const [tab, setTab] = useState<Tab>('overview')
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [searchPolicies, setSearchPolicies] = useState('')
+  const [searchBrokers, setSearchBrokers] = useState('')
+  const [searchInsurers, setSearchInsurers] = useState('')
   const { user, logout } = useAuthStore()
   const router = useRouter()
 
   const handleLogout = () => { logout(); router.push('/login') }
+
+  const filteredPolicies = useMemo(() =>
+    POLICIES.filter(p => p.client.toLowerCase().includes(searchPolicies.toLowerCase()) ||
+      p.insurer.toLowerCase().includes(searchPolicies.toLowerCase()) ||
+      p.plan.toLowerCase().includes(searchPolicies.toLowerCase())), [searchPolicies])
+
+  const filteredBrokers = useMemo(() =>
+    BROKERS.filter(b => b.name.toLowerCase().includes(searchBrokers.toLowerCase()) ||
+      (b.company ?? '').toLowerCase().includes(searchBrokers.toLowerCase())), [searchBrokers])
+
+  const filteredInsurers = useMemo(() =>
+    INSURERS.filter(i => i.name.toLowerCase().includes(searchInsurers.toLowerCase())), [searchInsurers])
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ backgroundColor: '#F4F7FB' }}>
@@ -157,7 +235,8 @@ export default function SuperAdminDashboard() {
               </h1>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <AdminBell />
             <span className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full font-sans font-semibold text-[11px]"
               style={{ backgroundColor: '#F0FDFA', color: '#0D9488', border: '1px solid #CCFBF1' }}>
               <Shield className="w-3 h-3" /> Platform Admin
@@ -268,10 +347,18 @@ export default function SuperAdminDashboard() {
               {/* ══ INSURERS ══ */}
               {tab === 'insurers' && (
                 <div className="bg-white rounded-2xl border overflow-hidden" style={{ borderColor: '#E5EAF0' }}>
-                  <div className="px-5 py-4 border-b flex items-center justify-between" style={{ borderColor: '#F1F5F9' }}>
-                    <p className="font-sans font-bold text-[14px]" style={{ color: '#0F2D55' }}>Insurance Companies ({INSURERS.length})</p>
-                    <button className="h-9 px-4 rounded-xl font-sans font-bold text-[12.5px] text-white"
-                      style={{ background: 'linear-gradient(135deg,#0F2D55,#0D9488)' }}>+ Onboard Insurer</button>
+                  <div className="px-5 py-4 border-b flex items-center justify-between gap-3 flex-wrap" style={{ borderColor: '#F1F5F9' }}>
+                    <p className="font-sans font-bold text-[14px]" style={{ color: '#0F2D55' }}>Insurance Companies ({filteredInsurers.length})</p>
+                    <div className="flex items-center gap-2">
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#94A3B8]" />
+                        <input type="text" value={searchInsurers} onChange={e => setSearchInsurers(e.target.value)} placeholder="Search insurers…"
+                          className="h-9 pl-9 pr-4 rounded-xl border font-sans text-[13px] outline-none w-48"
+                          style={{ borderColor: '#E5EAF0', backgroundColor: '#F8FAFC' }} />
+                      </div>
+                      <button className="h-9 px-4 rounded-xl font-sans font-bold text-[12.5px] text-white"
+                        style={{ background: 'linear-gradient(135deg,#0F2D55,#0D9488)' }}>+ Onboard Insurer</button>
+                    </div>
                   </div>
                   <div className="overflow-x-auto">
                     <table className="w-full">
@@ -283,7 +370,7 @@ export default function SuperAdminDashboard() {
                         </tr>
                       </thead>
                       <tbody className="divide-y" style={{ borderColor: '#F1F5F9' }}>
-                        {INSURERS.map(ins => (
+                        {filteredInsurers.map(ins => (
                           <tr key={ins.id} className="hover:bg-[#F8FAFC] transition-colors">
                             <td className="px-4 py-3">
                               <div className="flex items-center gap-2.5">
@@ -320,12 +407,18 @@ export default function SuperAdminDashboard() {
               {/* ══ BROKERS ══ */}
               {tab === 'brokers' && (
                 <div className="bg-white rounded-2xl border overflow-hidden" style={{ borderColor: '#E5EAF0' }}>
-                  <div className="px-5 py-4 border-b flex items-center justify-between" style={{ borderColor: '#F1F5F9' }}>
-                    <p className="font-sans font-bold text-[14px]" style={{ color: '#0F2D55' }}>Brokers ({BROKERS.length})</p>
-                    <div className="flex gap-2">
+                  <div className="px-5 py-4 border-b flex items-center justify-between gap-3 flex-wrap" style={{ borderColor: '#F1F5F9' }}>
+                    <p className="font-sans font-bold text-[14px]" style={{ color: '#0F2D55' }}>Brokers ({filteredBrokers.length})</p>
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span className="flex items-center gap-1.5 px-3 py-1 rounded-full font-sans text-[11px] font-semibold" style={{ backgroundColor: '#FEF3C7', color: '#92400E' }}>
                         <AlertCircle className="w-3 h-3" /> {BROKERS.filter(b => b.status === 'pending').length} pending
                       </span>
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#94A3B8]" />
+                        <input type="text" value={searchBrokers} onChange={e => setSearchBrokers(e.target.value)} placeholder="Search brokers…"
+                          className="h-9 pl-9 pr-4 rounded-xl border font-sans text-[13px] outline-none w-44"
+                          style={{ borderColor: '#E5EAF0', backgroundColor: '#F8FAFC' }} />
+                      </div>
                       <button className="h-9 px-4 rounded-xl font-sans font-bold text-[12.5px] text-white"
                         style={{ background: 'linear-gradient(135deg,#0F2D55,#0D9488)' }}>+ Add Broker</button>
                     </div>
@@ -340,7 +433,7 @@ export default function SuperAdminDashboard() {
                         </tr>
                       </thead>
                       <tbody className="divide-y" style={{ borderColor: '#F1F5F9' }}>
-                        {BROKERS.map(br => (
+                        {filteredBrokers.map(br => (
                           <tr key={br.id} className="hover:bg-[#F8FAFC] transition-colors">
                             <td className="px-4 py-3">
                               <div className="flex items-center gap-2.5">
@@ -383,8 +476,14 @@ export default function SuperAdminDashboard() {
               {/* ══ ALL POLICIES ══ */}
               {tab === 'policies' && (
                 <div className="bg-white rounded-2xl border overflow-hidden" style={{ borderColor: '#E5EAF0' }}>
-                  <div className="px-5 py-4 border-b" style={{ borderColor: '#F1F5F9' }}>
-                    <p className="font-sans font-bold text-[14px]" style={{ color: '#0F2D55' }}>All Platform Policies ({POLICIES.length})</p>
+                  <div className="px-5 py-4 border-b flex items-center justify-between gap-3 flex-wrap" style={{ borderColor: '#F1F5F9' }}>
+                    <p className="font-sans font-bold text-[14px]" style={{ color: '#0F2D55' }}>All Platform Policies ({filteredPolicies.length})</p>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#94A3B8]" />
+                      <input type="text" value={searchPolicies} onChange={e => setSearchPolicies(e.target.value)} placeholder="Search policies…"
+                        className="h-9 pl-9 pr-4 rounded-xl border font-sans text-[13px] outline-none w-52"
+                        style={{ borderColor: '#E5EAF0', backgroundColor: '#F8FAFC' }} />
+                    </div>
                   </div>
                   <div className="overflow-x-auto">
                     <table className="w-full">
@@ -396,7 +495,7 @@ export default function SuperAdminDashboard() {
                         </tr>
                       </thead>
                       <tbody className="divide-y" style={{ borderColor: '#F1F5F9' }}>
-                        {POLICIES.map(p => (
+                        {filteredPolicies.map(p => (
                           <tr key={p.id} className="hover:bg-[#F8FAFC] transition-colors">
                             <td className="px-4 py-3 font-sans font-semibold text-[12px]" style={{ color: '#0D9488' }}>{p.id}</td>
                             <td className="px-4 py-3 font-sans font-semibold text-[13px]" style={{ color: '#0F2D55' }}>{p.client}</td>

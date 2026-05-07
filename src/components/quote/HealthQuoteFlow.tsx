@@ -4,7 +4,7 @@ import { useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   ChevronLeft, CheckCircle2, ArrowRight, Shield, Download,
-  SlidersHorizontal, X, Search, Loader2, Mail, Phone,
+  SlidersHorizontal, X, Search, Loader2, Mail, Phone, MessageCircle,
 } from 'lucide-react'
 import Logo from '@/components/ui/Logo'
 import {
@@ -264,6 +264,164 @@ function Chip({ children, active, onClick }: { children: React.ReactNode; active
   )
 }
 
+/* ─── Compare Modal ──────────────────────────────────────── */
+function ComparePlanModal({ planIds, plans, getPremiumFn, onSelect, onClose }: {
+  planIds: string[]
+  plans: Plan[]
+  getPremiumFn: (p: Plan) => number
+  onSelect: (id: string) => void
+  onClose: () => void
+}) {
+  const selected = planIds.map(id => plans.find(p => p.id === id)).filter(Boolean) as Plan[]
+
+  const ROWS: { label: string; key: keyof Plan['highlights'] }[] = [
+    { label: 'Annual Limit',       key: 'annualLimit' },
+    { label: 'Territory',          key: 'territory' },
+    { label: 'Consultation',       key: 'consultation' },
+    { label: 'OP Annual Limit',    key: 'opLimit' },
+    { label: 'Pharmacy Copay',     key: 'pharmacy' },
+    { label: 'Pharmacy Sub-limit', key: 'pharmacySub' },
+    { label: 'Dental',             key: 'dental' },
+    { label: 'Optical',            key: 'optical' },
+    { label: 'Maternity',          key: 'maternity' },
+  ]
+
+  const networkRank: Record<string, number> = { standard: 1, wide: 2, premium: 3 }
+
+  return (
+    <>
+      <motion.div key="cov" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        className="fixed inset-0 z-50 bg-black/60" onClick={onClose} />
+      <motion.div key="cm" initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.97 }}
+        transition={{ duration: 0.2 }}
+        className="fixed inset-x-3 top-4 bottom-4 z-50 bg-white rounded-2xl overflow-hidden flex flex-col shadow-2xl"
+        style={{ maxWidth: '900px', margin: '0 auto' }}>
+
+        {/* Header */}
+        <div className="px-6 py-4 border-b flex items-center justify-between shrink-0" style={{ borderColor: '#E5EAF0' }}>
+          <div>
+            <h2 className="font-display font-bold text-[18px]" style={{ color: '#0F2D55' }}>Side-by-Side Comparison</h2>
+            <p className="font-sans text-[12px]" style={{ color: '#64748B' }}>Comparing {selected.length} plans</p>
+          </div>
+          <button type="button" onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-[#F4F7FB]">
+            <X className="w-4 h-4 text-[#64748B]" />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 overflow-auto">
+          <table className="w-full border-collapse">
+            {/* Plan headers */}
+            <thead>
+              <tr>
+                <th className="w-40 px-4 py-4 text-left font-sans font-bold text-[11px] uppercase tracking-wide sticky left-0 bg-white"
+                  style={{ color: '#94A3B8', borderBottom: '2px solid #E5EAF0' }}>Feature</th>
+                {selected.map(p => {
+                  const premium = getPremiumFn(p)
+                  return (
+                    <th key={p.id} className="px-4 py-4 text-left min-w-[200px]"
+                      style={{ borderBottom: `2px solid ${p.recommended ? '#0D9488' : '#E5EAF0'}` }}>
+                      <div className="flex items-center gap-2 mb-1">
+                        {p.recommended && (
+                          <span className="text-[9px] font-bold px-2 py-0.5 rounded-full text-white"
+                            style={{ backgroundColor: '#0D9488' }}>Most Popular</span>
+                        )}
+                        {p.tag && !p.recommended && (
+                          <span className="text-[9px] font-bold px-2 py-0.5 rounded-full text-white"
+                            style={{ backgroundColor: p.tagColor ?? '#64748B' }}>{p.tag}</span>
+                        )}
+                      </div>
+                      <p className="font-display font-extrabold text-[18px]" style={{ color: '#0F2D55' }}>{p.name}</p>
+                      <p className="font-sans text-[11px]" style={{ color: '#64748B' }}>{p.insurer}</p>
+                      <p className="font-display font-bold text-[20px] mt-1" style={{ color: '#0D9488' }}>
+                        AED {premium.toLocaleString()}<span className="font-sans font-normal text-[11px] text-[#94A3B8]"> /yr</span>
+                      </p>
+                    </th>
+                  )
+                })}
+              </tr>
+            </thead>
+            <tbody>
+              {/* Network row */}
+              <tr style={{ backgroundColor: '#F8FAFC' }}>
+                <td className="px-4 py-3 font-sans font-semibold text-[12px] sticky left-0 bg-[#F8FAFC]" style={{ color: '#475569' }}>Network</td>
+                {selected.map(p => {
+                  const best = selected.reduce((a, b) => (networkRank[b.network] > networkRank[a.network] ? b : a))
+                  return (
+                    <td key={p.id} className="px-4 py-3">
+                      <span className="font-sans font-semibold text-[12.5px]"
+                        style={{ color: p.id === best.id ? '#0D9488' : '#475569' }}>
+                        {p.networkLabel}
+                        {p.id === best.id && <span className="ml-1.5 text-[10px]">★</span>}
+                      </span>
+                    </td>
+                  )
+                })}
+              </tr>
+
+              {/* Highlights rows */}
+              {ROWS.map((row, ri) => {
+                const vals = selected.map(p => p.highlights[row.key])
+                const allSame = vals.every(v => v === vals[0])
+                return (
+                  <tr key={row.key} style={{ backgroundColor: ri % 2 === 0 ? 'white' : '#F8FAFC' }}>
+                    <td className="px-4 py-3 font-sans font-semibold text-[12px] sticky left-0"
+                      style={{ color: '#475569', backgroundColor: ri % 2 === 0 ? 'white' : '#F8FAFC' }}>{row.label}</td>
+                    {selected.map((p, pi) => {
+                      const v = p.highlights[row.key]
+                      const isNotCovered = v === 'Not covered'
+                      const isBest = !allSame && !isNotCovered && pi === vals.findIndex(x => x !== 'Not covered' && x === vals.reduce((a, b) =>
+                        (a === 'Not covered' ? b : b === 'Not covered' ? a : a.length > b.length ? a : b)
+                      ))
+                      return (
+                        <td key={p.id} className="px-4 py-3">
+                          <span className="font-sans text-[12.5px]"
+                            style={{ color: isNotCovered ? '#CBD5E1' : '#0F2D55', fontWeight: isBest ? 600 : 400 }}>
+                            {isNotCovered ? '—' : v}
+                          </span>
+                        </td>
+                      )
+                    })}
+                  </tr>
+                )
+              })}
+
+              {/* Key features row */}
+              <tr>
+                <td className="px-4 py-3 font-sans font-semibold text-[12px] sticky left-0 bg-white align-top pt-4" style={{ color: '#475569' }}>Key Features</td>
+                {selected.map(p => (
+                  <td key={p.id} className="px-4 py-3 align-top pt-4">
+                    <div className="space-y-1.5">
+                      {p.keyFeatures.slice(0, 4).map(f => (
+                        <div key={f} className="flex items-start gap-1.5">
+                          <CheckCircle2 className="w-3 h-3 shrink-0 mt-0.5" style={{ color: '#0D9488' }} />
+                          <span className="font-sans text-[11.5px]" style={{ color: '#475569' }}>{f}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </td>
+                ))}
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 border-t shrink-0 grid gap-3" style={{ borderColor: '#E5EAF0', gridTemplateColumns: `160px repeat(${selected.length}, 1fr)` }}>
+          <div />
+          {selected.map(p => (
+            <button key={p.id} type="button" onClick={() => { onSelect(p.id); onClose() }}
+              className="h-10 rounded-xl font-sans font-bold text-[13px] text-white transition-all hover:opacity-90"
+              style={{ background: p.recommended ? 'linear-gradient(135deg,#0D9488,#0F2D55)' : 'linear-gradient(135deg,#0F2D55,#0D9488)' }}>
+              Select {p.name}
+            </button>
+          ))}
+        </div>
+      </motion.div>
+    </>
+  )
+}
+
 /* ─── Plan Listing (PolicyBazaar style) ──────────────────── */
 type PlanTab = 'highlights' | 'exclusions' | 'split'
 
@@ -281,6 +439,7 @@ function PlanListingStep({ plans, emirate, salaryBand, depRelation, memberType, 
   const [activeTabs, setActiveTabs] = useState<Record<string, PlanTab>>({})
   const [compareList, setCompareList] = useState<string[]>([])
   const [showFilters, setShowFilters] = useState(false)
+  const [showCompare, setShowCompare] = useState(false)
 
   const emirateName: Record<string, string> = {
     dubai: 'Dubai', abudhabi: 'Abu Dhabi', sharjah: 'Sharjah',
@@ -380,10 +539,23 @@ function PlanListingStep({ plans, emirate, salaryBand, depRelation, memberType, 
     </div>
   )
 
-  return (
-    <div>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-5">
+    return (
+      <div>
+        {/* Compare modal */}
+        <AnimatePresence>
+          {showCompare && compareList.length >= 2 && (
+            <ComparePlanModal
+              planIds={compareList}
+              plans={plans}
+              getPremiumFn={getPremium}
+              onSelect={id => { onSelect(id); setShowCompare(false) }}
+              onClose={() => setShowCompare(false)}
+            />
+          )}
+        </AnimatePresence>
+
+        {/* Header */}
+        <div className="flex items-center justify-between mb-5">
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full mb-2 font-sans font-semibold text-[12px]"
             style={{ backgroundColor: '#F0FDFA', color: '#0D9488', border: '1px solid #CCFBF1' }}>
@@ -461,18 +633,27 @@ function PlanListingStep({ plans, emirate, salaryBand, depRelation, memberType, 
                           {plan.networkLabel}
                         </span>
                         {plan.tag && (
-                          <span className="font-sans font-bold text-[10px] px-2 py-0.5 rounded-full text-white"
-                            style={{ backgroundColor: plan.tagColor ?? '#0D9488' }}>{plan.tag}</span>
+                          <span className="relative inline-flex items-center font-sans font-bold text-[10px] px-2 py-0.5 rounded-full text-white"
+                            style={{ backgroundColor: plan.tagColor ?? '#0D9488' }}>
+                            {plan.recommended && (
+                              <span className="absolute inset-0 rounded-full animate-ping opacity-40"
+                                style={{ backgroundColor: plan.tagColor ?? '#0D9488' }} />
+                            )}
+                            {plan.tag}
+                          </span>
                         )}
                       </div>
                       <h3 className="font-display font-extrabold text-[20px]" style={{ color: '#0F2D55' }}>{plan.name}</h3>
                       <p className="font-sans text-[12px]" style={{ color: '#64748B' }}>{plan.insurer}</p>
                     </div>
                     <div className="text-right shrink-0">
-                      <div className="font-display font-extrabold text-[26px] leading-none" style={{ color: '#0F2D55' }}>
-                        AED {premium.toLocaleString()}
+                      <div className="flex items-baseline gap-1">
+                        <span className="font-display font-extrabold text-[26px] leading-none" style={{ color: '#0F2D55' }}>
+                          AED {premium.toLocaleString()}
+                        </span>
+                        <span className="font-sans font-semibold text-[12px]" style={{ color: '#94A3B8' }}>/yr</span>
                       </div>
-                      <div className="font-sans text-[11px]" style={{ color: '#64748B' }}>per year (excl. Fees &amp; VAT)</div>
+                      <div className="font-sans text-[10.5px]" style={{ color: '#94A3B8' }}>excl. Beamah &amp; VAT</div>
                     </div>
                   </div>
                 </div>
@@ -600,7 +781,7 @@ function PlanListingStep({ plans, emirate, salaryBand, depRelation, memberType, 
                   ) : null
                 })}
               </div>
-              <button type="button"
+              <button type="button" onClick={() => setShowCompare(true)}
                 className="flex items-center gap-1.5 h-9 px-4 rounded-xl font-sans font-bold text-[12.5px] text-white shrink-0 transition-all hover:opacity-90"
                 style={{ background: 'linear-gradient(135deg,#0D9488,#2DD4BF)' }}>
                 Compare {compareList.length} Plans
@@ -1060,8 +1241,16 @@ function SuccessStep({ data, plan, premium }: {
         </div>
       </div>
 
+      {/* WhatsApp share */}
+      <a href={`https://wa.me/?text=${encodeURIComponent(`My InsureAE Quote ✅\n\nRef: ${data.quoteNumber}\nPlan: ${plan.name} by ${plan.insurer}\nPremium: AED ${premium.toLocaleString()}/yr\nAnnual Limit: ${plan.highlights.annualLimit}\n\nGenerated at https://insuranceuae.vercel.app`)}`}
+        target="_blank" rel="noopener noreferrer"
+        className="flex items-center justify-center gap-2 w-full h-12 rounded-xl font-sans font-bold text-[14px] text-white mb-4 transition-all hover:opacity-90 hover:-translate-y-0.5"
+        style={{ backgroundColor: '#25D366' }}>
+        <MessageCircle className="w-5 h-5" /> Share via WhatsApp
+      </a>
+
       <div className="flex flex-col sm:flex-row gap-3 justify-center">
-        <a href="/dashboard"
+        <a href="/broker"
           className="flex items-center justify-center gap-2 h-12 px-8 rounded-xl font-sans font-bold text-[14px] text-white transition-all hover:opacity-90 hover:-translate-y-0.5"
           style={{ background: 'linear-gradient(135deg,#0F2D55,#0D9488)' }}>
           View My Dashboard <ArrowRight className="w-4 h-4" />
@@ -1069,7 +1258,7 @@ function SuccessStep({ data, plan, premium }: {
         <a href="/quote/health"
           className="flex items-center justify-center gap-2 h-12 px-8 rounded-xl font-sans font-semibold text-[14px] border transition-colors hover:bg-[#F4F7FB]"
           style={{ borderColor: '#E5EAF0', color: '#475569' }}>
-          Get Another Quote
+          New Quote
         </a>
       </div>
     </motion.div>
@@ -1170,7 +1359,29 @@ export default function HealthQuoteFlow() {
 
       {/* Progress indicator */}
       <div className="bg-white border-b" style={{ borderColor: '#E5EAF0' }}>
-        <div className="max-w-[1000px] mx-auto px-5 py-4">
+        <div className="max-w-[1000px] mx-auto px-5 py-3">
+          {/* Mobile: step counter pill */}
+          <div className="sm:hidden flex items-center justify-between mb-1">
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 px-3 py-1 rounded-full font-sans font-bold text-[12px] text-white"
+                style={{ background: 'linear-gradient(135deg,#0F2D55,#0D9488)' }}>
+                Step {SECTION_STEPS.findIndex(ss => ss.includes(step)) + 1} of {SECTIONS.length}
+              </div>
+              <span className="font-sans font-semibold text-[12px]" style={{ color: '#0F2D55' }}>
+                {SECTIONS[SECTION_STEPS.findIndex(ss => ss.includes(step))]}
+              </span>
+            </div>
+            <span className="font-sans text-[11px]" style={{ color: '#94A3B8' }}>
+              {Math.round(((SECTION_STEPS.findIndex(ss => ss.includes(step))) / (SECTIONS.length - 1)) * 100)}% complete
+            </span>
+          </div>
+          {/* Mobile progress bar */}
+          <div className="sm:hidden h-1.5 rounded-full mb-1" style={{ backgroundColor: '#E5EAF0' }}>
+            <div className="h-1.5 rounded-full transition-all duration-500"
+              style={{ width: `${Math.round(((SECTION_STEPS.findIndex(ss => ss.includes(step))) / (SECTIONS.length - 1)) * 100)}%`, background: 'linear-gradient(90deg,#0F2D55,#0D9488)' }} />
+          </div>
+          {/* Desktop: dot track */}
+          <div className="hidden sm:block relative flex items-start">
           <div className="relative flex items-start">
             <div className="absolute h-0.5 pointer-events-none"
               style={{ top: 14, left: `${50 / SECTIONS.length}%`, right: `${50 / SECTIONS.length}%`, backgroundColor: '#E5EAF0', zIndex: 0 }} />
@@ -1195,6 +1406,7 @@ export default function HealthQuoteFlow() {
                 </div>
               )
             })}
+          </div>
           </div>
         </div>
       </div>
