@@ -26,7 +26,50 @@ export interface Plan {
   }
   keyFeatures: string[]
   exclusions: string[]
+  hospitals: {
+    name: string
+    location: string
+    type: 'clinic' | 'hospital' | 'specialist'
+    billing: 'direct' | 'reimbursement'
+  }[]
 }
+
+/* ─── Hospital Networks ──────────────────────────────────── */
+const STANDARD_HOSPITALS: Plan['hospitals'] = [
+  { name: 'Aster Clinic', location: 'Dubai — Multiple branches', type: 'clinic', billing: 'direct' },
+  { name: 'Medeor Hospital', location: 'Dubai', type: 'hospital', billing: 'direct' },
+  { name: 'Mediclinic Welcare', location: 'Dubai', type: 'hospital', billing: 'direct' },
+  { name: 'NMC Royal Hospital', location: 'Abu Dhabi', type: 'hospital', billing: 'direct' },
+  { name: 'Aster Hospital Mankhool', location: 'Dubai', type: 'hospital', billing: 'direct' },
+  { name: 'Prime Medical Centre', location: 'Dubai', type: 'clinic', billing: 'direct' },
+  { name: 'Emirates Hospital Clinics', location: 'Dubai', type: 'clinic', billing: 'direct' },
+  { name: 'Thumbay Hospital', location: 'Ajman, Sharjah', type: 'hospital', billing: 'direct' },
+]
+
+const WIDE_HOSPITALS: Plan['hospitals'] = [
+  ...STANDARD_HOSPITALS,
+  { name: 'Mediclinic City Hospital', location: 'Dubai Healthcare City', type: 'hospital', billing: 'direct' },
+  { name: 'American Hospital Dubai', location: 'Dubai', type: 'hospital', billing: 'direct' },
+  { name: 'Zulekha Hospital', location: 'Dubai, Sharjah', type: 'hospital', billing: 'direct' },
+  { name: 'Burjeel Hospital', location: 'Abu Dhabi', type: 'hospital', billing: 'direct' },
+  { name: 'Aster DM Healthcare', location: 'UAE-wide', type: 'hospital', billing: 'direct' },
+  { name: 'Dr. Sulaiman Al Habib', location: 'Dubai', type: 'hospital', billing: 'direct' },
+  { name: 'Emirates Specialty Hospital', location: 'Dubai Healthcare City', type: 'specialist', billing: 'direct' },
+]
+
+const PREMIUM_HOSPITALS: Plan['hospitals'] = [
+  ...WIDE_HOSPITALS,
+  { name: 'Cleveland Clinic Abu Dhabi', location: 'Abu Dhabi', type: 'hospital', billing: 'direct' },
+  { name: 'Moorfields Eye Hospital', location: 'Dubai Healthcare City', type: 'specialist', billing: 'direct' },
+  { name: 'King\'s College Hospital', location: 'Dubai Hills', type: 'hospital', billing: 'direct' },
+  { name: 'LLH Hospital', location: 'Abu Dhabi', type: 'hospital', billing: 'direct' },
+  { name: 'Mediclinic Al Ain', location: 'Al Ain', type: 'hospital', billing: 'direct' },
+  { name: 'VPS Healthcare', location: 'UAE-wide', type: 'hospital', billing: 'direct' },
+  { name: 'International Modern Hospital', location: 'Dubai', type: 'hospital', billing: 'direct' },
+  { name: 'Boston Medical Group', location: 'Dubai', type: 'specialist', billing: 'direct' },
+  { name: 'GHI Clinics', location: 'Dubai', type: 'clinic', billing: 'reimbursement' },
+  { name: 'Overseas facilities', location: 'International (emergency)', type: 'hospital', billing: 'reimbursement' },
+]
 
 export const PLANS: Plan[] = [
   {
@@ -64,6 +107,7 @@ export const PLANS: Plan[] = [
       'Cosmetic procedures',
       'Treatment outside UAE',
     ],
+    hospitals: STANDARD_HOSPITALS,
   },
   {
     id: 'silk_road',
@@ -100,6 +144,7 @@ export const PLANS: Plan[] = [
       'Cosmetic procedures',
       'Orthodontics',
     ],
+    hospitals: STANDARD_HOSPITALS,
   },
   {
     id: 'pearl',
@@ -140,6 +185,7 @@ export const PLANS: Plan[] = [
       'Infertility & IVF treatment',
       'Weight loss surgery',
     ],
+    hospitals: WIDE_HOSPITALS,
   },
   {
     id: 'gold',
@@ -180,6 +226,7 @@ export const PLANS: Plan[] = [
       'IVF & infertility',
       'Long-term psychiatric inpatient',
     ],
+    hospitals: WIDE_HOSPITALS,
   },
   {
     id: 'platinum',
@@ -217,6 +264,7 @@ export const PLANS: Plan[] = [
       'IVF beyond 2 cycles',
       'Experimental treatments',
     ],
+    hospitals: PREMIUM_HOSPITALS,
   },
   {
     id: 'diamond',
@@ -254,6 +302,7 @@ export const PLANS: Plan[] = [
       'Experimental or unproven treatments',
       'Pre-existing conditions (30-day waiting period)',
     ],
+    hospitals: PREMIUM_HOSPITALS,
   },
 ]
 

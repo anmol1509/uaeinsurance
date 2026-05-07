@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   ChevronLeft, CheckCircle2, ArrowRight, Shield, Download,
   SlidersHorizontal, X, Search, Loader2, Mail, Phone, MessageCircle,
+  Hospital, MapPin, CreditCard,
 } from 'lucide-react'
 import Logo from '@/components/ui/Logo'
 import {
@@ -423,7 +424,7 @@ function ComparePlanModal({ planIds, plans, getPremiumFn, onSelect, onClose }: {
 }
 
 /* ─── Plan Listing (PolicyBazaar style) ──────────────────── */
-type PlanTab = 'highlights' | 'exclusions' | 'split'
+type PlanTab = 'highlights' | 'exclusions'
 
 function PlanListingStep({ plans, emirate, salaryBand, depRelation, memberType, onSelect }: {
   plans: Plan[]
@@ -440,6 +441,7 @@ function PlanListingStep({ plans, emirate, salaryBand, depRelation, memberType, 
   const [compareList, setCompareList] = useState<string[]>([])
   const [showFilters, setShowFilters] = useState(false)
   const [showCompare, setShowCompare] = useState(false)
+  const [hospitalPlanId, setHospitalPlanId] = useState<string | null>(null)
 
   const emirateName: Record<string, string> = {
     dubai: 'Dubai', abudhabi: 'Abu Dhabi', sharjah: 'Sharjah',
@@ -552,6 +554,85 @@ function PlanListingStep({ plans, emirate, salaryBand, depRelation, memberType, 
               onClose={() => setShowCompare(false)}
             />
           )}
+        </AnimatePresence>
+
+        {/* Hospital Network modal */}
+        <AnimatePresence>
+          {hospitalPlanId && (() => {
+            const hPlan = plans.find(p => p.id === hospitalPlanId)
+            if (!hPlan) return null
+            const typeIcons: Record<string, string> = { hospital: '🏥', clinic: '🏪', specialist: '🔬' }
+            const typeOrder: Record<string, number> = { hospital: 0, clinic: 1, specialist: 2 }
+            const sorted = [...hPlan.hospitals].sort((a, b) => typeOrder[a.type] - typeOrder[b.type])
+            return (
+              <>
+                <motion.div key="hov" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                  className="fixed inset-0 z-50 bg-black/60" onClick={() => setHospitalPlanId(null)} />
+                <motion.div key="hm" initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 40 }}
+                  transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] as [number, number, number, number] }}
+                  className="fixed inset-x-3 bottom-0 top-12 z-50 bg-white rounded-t-2xl overflow-hidden flex flex-col shadow-2xl sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 sm:w-[520px] sm:top-8 sm:rounded-2xl sm:bottom-8"
+                  style={{ maxWidth: '520px' }}>
+                  {/* Header */}
+                  <div className="px-5 py-4 border-b flex items-start gap-3 shrink-0" style={{ borderColor: '#E5EAF0' }}>
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: '#EBF2FA' }}>
+                      <Hospital className="w-5 h-5" style={{ color: '#0F2D55' }} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h2 className="font-display font-bold text-[17px]" style={{ color: '#0F2D55' }}>Hospital Network</h2>
+                      <p className="font-sans text-[12px]" style={{ color: '#64748B' }}>
+                        {hPlan.name} · {hPlan.insurer} · {hPlan.hospitals.length} facilities
+                      </p>
+                    </div>
+                    <button type="button" onClick={() => setHospitalPlanId(null)}
+                      className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-[#F4F7FB] shrink-0">
+                      <X className="w-4 h-4 text-[#64748B]" />
+                    </button>
+                  </div>
+
+                  {/* Network badge */}
+                  <div className="px-5 py-3 border-b shrink-0 flex items-center gap-3" style={{ borderColor: '#F1F5F9', backgroundColor: '#F8FAFC' }}>
+                    <span className="px-2.5 py-1 rounded-full font-sans font-bold text-[11px]"
+                      style={{ backgroundColor: hPlan.network === 'premium' ? '#F5F3FF' : hPlan.network === 'wide' ? '#F0FDFA' : '#F1F5F9', color: hPlan.network === 'premium' ? '#6D28D9' : hPlan.network === 'wide' ? '#0A7A72' : '#475569' }}>
+                      {hPlan.networkLabel}
+                    </span>
+                    <span className="font-sans text-[12px]" style={{ color: '#94A3B8' }}>
+                      {sorted.filter(h => h.billing === 'direct').length} direct billing · {sorted.filter(h => h.billing === 'reimbursement').length} reimbursement
+                    </span>
+                  </div>
+
+                  {/* List */}
+                  <div className="flex-1 overflow-y-auto divide-y" style={{ borderColor: '#F1F5F9' }}>
+                    {sorted.map((h, i) => (
+                      <div key={i} className="px-5 py-3.5 flex items-center gap-3 hover:bg-[#F8FAFC] transition-colors">
+                        <span className="text-xl shrink-0">{typeIcons[h.type]}</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-sans font-semibold text-[13px]" style={{ color: '#0F2D55' }}>{h.name}</p>
+                          <div className="flex items-center gap-1 mt-0.5">
+                            <MapPin className="w-3 h-3 shrink-0" style={{ color: '#94A3B8' }} />
+                            <span className="font-sans text-[11.5px]" style={{ color: '#64748B' }}>{h.location}</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <CreditCard className="w-3 h-3" style={{ color: h.billing === 'direct' ? '#0D9488' : '#94A3B8' }} />
+                          <span className="font-sans font-semibold text-[11px] capitalize"
+                            style={{ color: h.billing === 'direct' ? '#0D9488' : '#94A3B8' }}>
+                            {h.billing === 'direct' ? 'Direct billing' : 'Reimbursement'}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Footer */}
+                  <div className="px-5 py-4 border-t shrink-0" style={{ borderColor: '#E5EAF0' }}>
+                    <p className="font-sans text-[11.5px] text-center" style={{ color: '#94A3B8' }}>
+                      Network subject to change. Always confirm with provider before treatment.
+                    </p>
+                  </div>
+                </motion.div>
+              </>
+            )
+          })()}
         </AnimatePresence>
 
         {/* Header */}
@@ -676,14 +757,14 @@ function PlanListingStep({ plans, emirate, salaryBand, depRelation, memberType, 
                 {/* Tabs */}
                 <div className="border-b" style={{ borderColor: '#F1F5F9' }}>
                   <div className="flex">
-                    {(['highlights', 'exclusions', 'split'] as const).map(t => (
+                    {(['highlights', 'exclusions'] as const).map(t => (
                       <button key={t} type="button" onClick={() => setTab(plan.id, t)}
                         className="px-5 py-2.5 font-sans font-semibold text-[12px] border-b-2 transition-all capitalize"
                         style={{
                           borderColor: tab === t ? '#0D9488' : 'transparent',
                           color: tab === t ? '#0D9488' : '#64748B',
                         }}>
-                        {t === 'split' ? 'Member Split' : t.charAt(0).toUpperCase() + t.slice(1)}
+                        {t.charAt(0).toUpperCase() + t.slice(1)}
                       </button>
                     ))}
                   </div>
@@ -711,23 +792,6 @@ function PlanListingStep({ plans, emirate, salaryBand, depRelation, memberType, 
                       ))}
                     </div>
                   )}
-                  {tab === 'split' && (
-                    <div className="space-y-2">
-                      {[
-                        { label: 'Self', mult: 1.0 },
-                        { label: 'Spouse', mult: 0.85 },
-                        { label: 'Child (per child)', mult: 0.60 },
-                        { label: 'Parent', mult: 1.20 },
-                      ].map(({ label, mult }) => (
-                        <div key={label} className="flex items-center justify-between py-1.5 border-b" style={{ borderColor: '#F1F5F9' }}>
-                          <span className="font-sans text-[13px]" style={{ color: '#475569' }}>{label}</span>
-                          <span className="font-sans font-bold text-[13px]" style={{ color: '#0F2D55' }}>
-                            AED {Math.round(premium * mult).toLocaleString()} / yr
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
                 </div>
 
                 {/* Card footer */}
@@ -742,11 +806,16 @@ function PlanListingStep({ plans, emirate, salaryBand, depRelation, memberType, 
                       {inCompare ? 'Remove' : 'Add to Compare'}
                     </span>
                   </button>
-                  <div className="flex items-center gap-2 ml-auto">
+                  <div className="flex items-center gap-2 ml-auto flex-wrap">
+                    <button type="button" onClick={() => setHospitalPlanId(plan.id)}
+                      className="flex items-center gap-1.5 h-9 px-3.5 rounded-xl border font-sans font-semibold text-[12.5px] transition-colors hover:bg-[#EBF2FA]"
+                      style={{ borderColor: '#CBD5E1', color: '#0F2D55' }}>
+                      <Hospital className="w-3.5 h-3.5" /> Hospital Network
+                    </button>
                     <button type="button"
                       className="flex items-center gap-1.5 h-9 px-3.5 rounded-xl border font-sans font-semibold text-[12.5px] transition-colors hover:bg-[#F4F7FB]"
                       style={{ borderColor: '#E5EAF0', color: '#475569' }}>
-                      <Download className="w-3.5 h-3.5" /> Download Benefits
+                      <Download className="w-3.5 h-3.5" /> TOB PDF
                     </button>
                     <button type="button" onClick={() => onSelect(plan.id)}
                       className="flex items-center gap-1.5 h-9 px-5 rounded-xl font-sans font-bold text-[13px] text-white transition-all hover:opacity-90 hover:-translate-y-0.5"
