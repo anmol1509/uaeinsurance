@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Eye, EyeOff, ArrowRight, CheckCircle2 } from 'lucide-react'
+import { Eye, EyeOff, ArrowRight, CheckCircle2, X } from 'lucide-react'
 import { useAuthStore, ROLE_REDIRECT } from '@/store/authStore'
 
 /* Floating background blobs */
@@ -76,6 +76,13 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center px-4 py-12 relative"
       style={{ background: 'linear-gradient(135deg, #060F1E 0%, #0A1A30 50%, #0B2540 100%)' }}>
       <Blobs />
+
+      {/* Fixed top-left home button */}
+      <Link href="/"
+        className="fixed top-4 left-4 z-50 flex items-center gap-2 px-3 py-2 rounded-xl font-sans font-semibold text-[13px] transition-all hover:bg-white/10"
+        style={{ border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.65)', backdropFilter: 'blur(8px)' }}>
+        <X className="w-4 h-4" /> Back to Home
+      </Link>
 
       <motion.div
         initial={{ opacity: 0, y: 24 }}
