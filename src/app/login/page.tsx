@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { Eye, EyeOff, ArrowRight, CheckCircle2 } from 'lucide-react'
-import { useAuthStore } from '@/store/authStore'
+import { useAuthStore, ROLE_REDIRECT } from '@/store/authStore'
 
 /* Floating background blobs */
 function Blobs() {
@@ -45,7 +45,7 @@ export default function LoginPage() {
   const [error, setError]     = useState('')
 
   useEffect(() => {
-    if (user) router.replace('/dashboard')
+    if (user) router.replace(ROLE_REDIRECT[user.role])
   }, [user, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -55,14 +55,20 @@ export default function LoginPage() {
     if (!result.success) {
       setError(result.error ?? 'Invalid email or password.')
     } else {
-      router.push('/dashboard')
+      const { user: u } = useAuthStore.getState()
+      router.push(u ? ROLE_REDIRECT[u.role] : '/dashboard')
     }
   }
 
-  const fillDemo = (type: 'customer' | 'admin') => {
-    setEmail(type === 'customer' ? 'customer@demo.com' : 'admin@demo.com')
-    setPassword('demo1234')
-    setError('')
+  const fillDemo = (type: 'customer' | 'super_admin' | 'insurer' | 'broker') => {
+    const creds: Record<string, [string, string]> = {
+      customer:    ['customer@demo.com',   'demo1234'],
+      super_admin: ['admin@insureae.com',  'admin123'],
+      insurer:     ['portal@daman.ae',     'daman123'],
+      broker:      ['broker@insureae.com', 'broker123'],
+    }
+    const [e, p] = creds[type]
+    setEmail(e); setPassword(p); setError('')
   }
 
   const inp = "w-full h-12 rounded-xl border px-4 font-sans text-[14px] bg-white/5 text-white outline-none transition-all placeholder:text-white/30"
@@ -99,17 +105,22 @@ export default function LoginPage() {
           <h1 className="font-display font-extrabold text-[28px] text-white leading-tight mb-1">
             Welcome back
           </h1>
-          <p className="font-sans text-[14px] mb-7" style={{ color: 'rgba(255,255,255,0.45)' }}>
-            Sign in to manage your policies
+          <p className="font-sans text-[14px] mb-5" style={{ color: 'rgba(255,255,255,0.45)' }}>
+            Sign in as Customer, Broker, Insurer or Admin
           </p>
 
           {/* Demo autofill */}
-          <div className="flex gap-2 mb-6">
-            {(['customer', 'admin'] as const).map(type => (
+          <div className="grid grid-cols-2 gap-2 mb-6">
+            {([
+              ['customer',    '👤 Customer'],
+              ['super_admin', '🛡️ Super Admin'],
+              ['insurer',     '🏥 Insurer'],
+              ['broker',      '🤝 Broker'],
+            ] as const).map(([type, label]) => (
               <button key={type} type="button" onClick={() => fillDemo(type)}
-                className="flex-1 py-2 rounded-lg font-sans font-semibold text-[12px] transition-all hover:opacity-80"
+                className="py-2 rounded-lg font-sans font-semibold text-[11.5px] transition-all hover:opacity-80"
                 style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)', color: 'rgba(255,255,255,0.55)' }}>
-                Demo {type}
+                {label}
               </button>
             ))}
           </div>

@@ -9,7 +9,7 @@ import CookieBanner from '@/components/ui/CookieBanner'
 import { cn } from '@/lib/utils'
 import { shouldShowMarketingBottomDock, isQuoteFormPath } from '@/lib/mobileDock'
 
-const CHROME_HIDDEN_PREFIXES = ['/dashboard', '/login', '/register', '/admin', '/quote/health']
+const CHROME_HIDDEN_PREFIXES = ['/dashboard', '/login', '/register', '/admin', '/insurer', '/broker', '/quote/health']
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()

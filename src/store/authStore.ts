@@ -6,10 +6,19 @@ export interface AuthUser {
   name: string
   email: string
   phone: string
-  role: 'customer' | 'admin'
+  role: 'customer' | 'super_admin' | 'insurer' | 'broker'
   initials: string
   joinedAt: string
   kycStatus: 'verified' | 'pending' | 'unverified'
+  company?: string   // for insurer role
+  licenseNo?: string // for broker/insurer
+}
+
+export const ROLE_REDIRECT: Record<AuthUser['role'], string> = {
+  customer:    '/dashboard',
+  super_admin: '/admin',
+  insurer:     '/insurer',
+  broker:      '/broker',
 }
 
 interface AuthStore {
@@ -22,24 +31,29 @@ interface AuthStore {
 
 const MOCK_USERS: Record<string, AuthUser> = {
   'customer@demo.com': {
-    id: 'usr_001',
-    name: 'Ahmed Al Mansoori',
-    email: 'customer@demo.com',
-    phone: '0501234567',
-    role: 'customer',
-    initials: 'AA',
-    joinedAt: '2024-03-15',
-    kycStatus: 'verified',
+    id: 'usr_001', name: 'Ahmed Al Mansoori', email: 'customer@demo.com',
+    phone: '0501234567', role: 'customer', initials: 'AA',
+    joinedAt: '2024-03-15', kycStatus: 'verified',
   },
-  'admin@demo.com': {
-    id: 'usr_admin',
-    name: 'Sara Al Nuaimi',
-    email: 'admin@demo.com',
-    phone: '0509876543',
-    role: 'admin',
-    initials: 'SN',
-    joinedAt: '2023-01-01',
-    kycStatus: 'verified',
+  // Super Admin
+  'admin@insureae.com': {
+    id: 'sa_001', name: 'Khalid Al Hashimi', email: 'admin@insureae.com',
+    phone: '0504567890', role: 'super_admin', initials: 'KH',
+    joinedAt: '2023-01-01', kycStatus: 'verified', licenseNo: 'PLAT/SA/001',
+  },
+  // Insurance Company (Daman)
+  'portal@daman.ae': {
+    id: 'ins_001', name: 'Fatima Al Kaabi', email: 'portal@daman.ae',
+    phone: '0551234567', role: 'insurer', initials: 'FK',
+    joinedAt: '2023-06-01', kycStatus: 'verified',
+    company: 'Daman Health', licenseNo: 'IC-DXB-0012',
+  },
+  // Broker
+  'broker@insureae.com': {
+    id: 'br_001', name: 'Omar Al Rashidi', email: 'broker@insureae.com',
+    phone: '0561234567', role: 'broker', initials: 'OR',
+    joinedAt: '2024-01-15', kycStatus: 'verified',
+    company: 'Al Rashidi Insurance Brokers', licenseNo: 'BR-DXB-0247',
   },
 }
 
