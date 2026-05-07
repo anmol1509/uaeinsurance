@@ -1,10 +1,10 @@
 'use client'
 import React, { useState, useCallback, useMemo } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   ChevronLeft, CheckCircle2, ArrowRight, Shield, Download,
-  SlidersHorizontal, X, Star, Search, FileText,
+  SlidersHorizontal, X, Search, Loader2, Mail, Phone,
 } from 'lucide-react'
 import Logo from '@/components/ui/Logo'
 import {
@@ -436,7 +436,7 @@ function PlanListingStep({ plans, emirate, salaryBand, depRelation, memberType, 
         </div>
 
         {/* Plan cards */}
-        <div className="flex-1 space-y-4 min-w-0">
+        <div className={cn('flex-1 space-y-4 min-w-0', compareList.length > 0 ? 'pb-20' : 'pb-4')}>
           {displayed.length === 0 ? (
             <div className="text-center py-16 bg-white rounded-2xl border" style={{ borderColor: '#E5EAF0' }}>
               <p className="font-sans font-bold text-[16px] mb-2" style={{ color: '#0F2D55' }}>No plans match your filters</p>
@@ -551,14 +551,16 @@ function PlanListingStep({ plans, emirate, salaryBand, depRelation, memberType, 
 
                 {/* Card footer */}
                 <div className="px-5 pb-4 flex items-center justify-between gap-3 flex-wrap">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <div className={cn('w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-all')}
-                      style={{ borderColor: inCompare ? '#0F2D55' : '#CBD5E1', backgroundColor: inCompare ? '#0F2D55' : 'white' }}
-                      onClick={() => toggleCompare(plan.id)}>
+                  <button type="button" onClick={() => toggleCompare(plan.id)}
+                    className="flex items-center gap-2 cursor-pointer group">
+                    <div className="w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-all"
+                      style={{ borderColor: inCompare ? '#0F2D55' : '#CBD5E1', backgroundColor: inCompare ? '#0F2D55' : 'white' }}>
                       {inCompare && <CheckCircle2 className="w-2.5 h-2.5 text-white" />}
                     </div>
-                    <span className="font-sans text-[12.5px]" style={{ color: '#475569' }}>Add to Compare</span>
-                  </label>
+                    <span className="font-sans text-[12.5px] group-hover:underline" style={{ color: inCompare ? '#0F2D55' : '#475569', fontWeight: inCompare ? 600 : 400 }}>
+                      {inCompare ? 'Remove' : 'Add to Compare'}
+                    </span>
+                  </button>
                   <div className="flex items-center gap-2 ml-auto">
                     <button type="button"
                       className="flex items-center gap-1.5 h-9 px-3.5 rounded-xl border font-sans font-semibold text-[12.5px] transition-colors hover:bg-[#F4F7FB]"
@@ -928,85 +930,155 @@ function PolicyholderStep({ data, set, goNext, goBack }: {
         )}
       </div>
 
-      <Buttons onNext={goNext} disabled={!valid} onBack={goBack} nextLabel="Proceed to Payment" />
+      {/* GDRFA Validation */}
+      <GdfraSaveButton valid={!!valid} onBack={goBack} onSuccess={goNext} />
     </div>
   )
 }
 
-/* ─── Payment Step ───────────────────────────────────────── */
-function PaymentStep({ data, plan, premium, goBack, router }: {
-  data: QuoteData; plan: Plan; premium: number; goBack: () => void; router: ReturnType<typeof useRouter>
-}) {
-  const [paid, setPaid] = useState(false)
-  const grand = calcGrandTotal(premium)
+function GdfraSaveButton({ valid, onBack, onSuccess }: { valid: boolean; onBack: () => void; onSuccess: () => void }) {
+  const [state, setState] = useState<'idle' | 'validating' | 'done'>('idle')
 
-  if (paid) return (
-    <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }}
-      className="rounded-3xl border bg-white p-10 text-center" style={{ borderColor: '#E5EAF0' }}>
-      <div className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center"
-        style={{ background: 'linear-gradient(135deg,#0F2D55,#0D9488)' }}>
-        <CheckCircle2 className="w-8 h-8 text-white" />
-      </div>
-      <h2 className="font-display font-bold text-[22px] mb-2" style={{ color: '#0F2D55' }}>Policy Confirmed!</h2>
-      <p className="font-sans text-[14px] mb-1" style={{ color: '#64748B' }}>
-        Quote <strong>{data.quoteNumber}</strong> · {plan.name} by {plan.insurer}
-      </p>
-      <p className="font-sans text-[14px] mb-2" style={{ color: '#64748B' }}>
-        Certificate emailed to <strong>{data.email}</strong> within 24 hours
-      </p>
-      <p className="font-sans font-bold text-[15px] mb-6" style={{ color: '#0D9488' }}>
-        AED {grand.toFixed(2)} charged successfully
-      </p>
-      <a href="/dashboard"
-        className="inline-flex h-12 px-8 rounded-xl font-sans font-bold text-[14px] text-white items-center justify-center"
-        style={{ background: 'linear-gradient(135deg,#0F2D55,#0D9488)' }}>
-        View My Dashboard →
-      </a>
-    </motion.div>
-  )
+  function handleClick() {
+    if (!valid || state !== 'idle') return
+    setState('validating')
+    setTimeout(() => { setState('done'); setTimeout(onSuccess, 600) }, 2200)
+  }
 
   return (
-    <div>
-      <div className="text-center mb-6">
-        <div className="text-4xl mb-3">💳</div>
-        <h2 className="font-display font-bold text-[24px] mb-1" style={{ color: '#0F2D55' }}>Complete Payment</h2>
-        <p className="font-sans text-[14px]" style={{ color: '#64748B' }}>Secure checkout — certificate issued within 24 hours</p>
+    <div className="mt-6">
+      {state === 'done' && (
+        <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+          className="flex items-center gap-2 px-4 py-3 rounded-xl mb-3 font-sans font-semibold text-[13px]"
+          style={{ backgroundColor: '#F0FDFA', border: '1px solid #CCFBF1', color: '#0A7A72' }}>
+          <CheckCircle2 className="w-4 h-4 shrink-0" /> GDRFA validation successful
+        </motion.div>
+      )}
+      <div className="flex gap-3">
+        <button type="button" onClick={onBack}
+          className="h-12 px-5 rounded-xl border font-sans font-semibold text-[14px] flex items-center gap-1.5 transition-colors hover:bg-[#F4F7FB]"
+          style={{ borderColor: '#E5EAF0', color: '#64748B' }}>
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+        <button type="button" onClick={handleClick} disabled={!valid || state === 'validating'}
+          className={cn('flex-1 h-12 rounded-xl font-sans font-bold text-[14px] flex items-center justify-center gap-2 transition-all',
+            !valid || state === 'validating' ? 'cursor-not-allowed' : 'hover:opacity-90 hover:shadow-md hover:-translate-y-0.5')}
+          style={{ background: !valid ? '#E5EAF0' : 'linear-gradient(135deg,#0F2D55,#0D9488)', color: !valid ? '#94A3B8' : 'white' }}>
+          {state === 'validating' ? (
+            <><Loader2 className="w-4 h-4 animate-spin" /> Validating with GDRFA…</>
+          ) : (
+            <>GDRFA Validation &amp; Save Details <ArrowRight className="w-4 h-4" /></>
+          )}
+        </button>
       </div>
-      <div className="mb-5 rounded-2xl p-5 flex items-center justify-between"
-        style={{ background: 'linear-gradient(135deg,#0F2D55,#0D9488)' }}>
-        <div>
-          <div className="font-sans text-[11px] font-semibold text-white/60 mb-0.5">{plan.name} · {plan.insurer}</div>
-          <div className="font-display font-extrabold text-[20px] text-white">{data.quoteNumber}</div>
-        </div>
-        <div className="text-right">
-          <div className="font-display font-extrabold text-[26px] text-white leading-none">AED {grand.toFixed(2)}</div>
-          <div className="font-sans text-[11px] text-white/60">incl. Beamah + VAT</div>
-        </div>
-      </div>
-      <div className="flex items-start gap-2.5 p-4 rounded-xl mb-5" style={{ backgroundColor: '#F0FDFA' }}>
-        <Shield className="w-4 h-4 shrink-0 mt-0.5" style={{ color: '#0D9488' }} />
-        <p className="font-sans text-[12px]" style={{ color: '#0A7A72' }}>
-          Secure payment. IA-licensed broker. DHA-compliant certificate issued within 24 hours.
-        </p>
-      </div>
-      <button type="button" onClick={() => setPaid(true)}
-        className="w-full h-14 rounded-xl font-sans font-extrabold text-[16px] text-white flex items-center justify-center gap-3 transition-all mb-3 hover:opacity-90 hover:shadow-xl hover:-translate-y-0.5"
-        style={{ background: 'linear-gradient(135deg,#0F2D55,#0D9488)' }}>
-        Pay AED {grand.toFixed(2)} Securely <ArrowRight className="w-5 h-5" />
-      </button>
-      <button type="button" onClick={goBack}
-        className="w-full h-11 rounded-xl border font-sans font-medium text-[13.5px] flex items-center justify-center gap-2 transition-colors hover:bg-[#F4F7FB]"
-        style={{ borderColor: '#E5EAF0', color: '#64748B' }}>
-        <ChevronLeft className="w-4 h-4" /> Back
-      </button>
     </div>
+  )
+}
+
+/* ─── Success Step ───────────────────────────────────────── */
+function SuccessStep({ data, plan, premium }: {
+  data: QuoteData; plan: Plan; premium: number
+}) {
+  const beamah = calcBeamah(premium)
+  const vat = calcVAT(premium, beamah)
+  const grand = calcGrandTotal(premium)
+  const today = new Date()
+  const policyEnd = new Date(today); policyEnd.setFullYear(today.getFullYear() + 1)
+  const fmt = (d: Date) => `${String(d.getDate()).padStart(2,'0')}-${String(d.getMonth()+1).padStart(2,'0')}-${d.getFullYear()}`
+
+  return (
+    <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.4, ease: [0.4,0,0.2,1] as [number,number,number,number] }}
+      className="text-center">
+
+      {/* Success icon */}
+      <div className="relative w-24 h-24 mx-auto mb-6">
+        <div className="absolute inset-0 rounded-full animate-ping opacity-20"
+          style={{ backgroundColor: '#0D9488' }} />
+        <div className="relative w-24 h-24 rounded-full flex items-center justify-center"
+          style={{ background: 'linear-gradient(135deg,#0F2D55,#0D9488)' }}>
+          <CheckCircle2 className="w-12 h-12 text-white" />
+        </div>
+      </div>
+
+      <h2 className="font-display font-extrabold text-[28px] mb-2" style={{ color: '#0F2D55' }}>
+        Quote Sent Successfully!
+      </h2>
+      <p className="font-sans text-[15px] mb-1" style={{ color: '#64748B' }}>
+        Your quote has been generated and sent to your email
+      </p>
+      <p className="font-sans font-bold text-[15px] mb-8" style={{ color: '#0D9488' }}>
+        Reference: {data.quoteNumber}
+      </p>
+
+      {/* Summary card */}
+      <div className="bg-white rounded-2xl border text-left mb-6 overflow-hidden" style={{ borderColor: '#E5EAF0' }}>
+        <div className="px-5 py-3 border-b" style={{ borderColor: '#E5EAF0', background: 'linear-gradient(135deg,#0F2D55,#0D9488)' }}>
+          <p className="font-display font-bold text-[15px] text-white">{plan.name} — {plan.insurer}</p>
+          <p className="font-sans text-[12px] text-white/70">{plan.networkLabel}</p>
+        </div>
+        <div className="divide-y" style={{ borderColor: '#F1F5F9' }}>
+          {[
+            ['Client Name', data.name || '—'],
+            ['Quotation Number', data.quoteNumber],
+            ['Policy Period', `${fmt(today)} to ${fmt(policyEnd)}`],
+            ['Annual Limit', plan.highlights.annualLimit],
+            ['Territory', plan.highlights.territory],
+            ['Base Premium', `AED ${premium.toLocaleString()}`],
+            ['Beamah', `AED ${beamah.toFixed(2)}`],
+            ['VAT (5%)', `AED ${vat.toFixed(2)}`],
+            ['Grand Total', `AED ${grand.toFixed(2)}`],
+          ].map(([l, v], i) => (
+            <div key={l} className="flex justify-between items-center px-5 py-2.5"
+              style={{ backgroundColor: i === 8 ? '#F0FDFA' : 'white' }}>
+              <span className="font-sans text-[13px]" style={{ color: '#64748B' }}>{l}</span>
+              <span className="font-sans font-bold text-[13px]" style={{ color: i === 8 ? '#0D9488' : '#0F2D55' }}>{v}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Contact confirmations */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
+        <div className="flex items-center gap-3 p-4 rounded-xl border bg-white" style={{ borderColor: '#E5EAF0' }}>
+          <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: '#F0FDFA' }}>
+            <Mail className="w-4 h-4" style={{ color: '#0D9488' }} />
+          </div>
+          <div>
+            <p className="font-sans font-bold text-[12px]" style={{ color: '#0F2D55' }}>Quote emailed to</p>
+            <p className="font-sans text-[12px]" style={{ color: '#64748B' }}>{data.email || '—'}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3 p-4 rounded-xl border bg-white" style={{ borderColor: '#E5EAF0' }}>
+          <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: '#F0FDFA' }}>
+            <Phone className="w-4 h-4" style={{ color: '#0D9488' }} />
+          </div>
+          <div>
+            <p className="font-sans font-bold text-[12px]" style={{ color: '#0F2D55' }}>Advisor will contact</p>
+            <p className="font-sans text-[12px]" style={{ color: '#64748B' }}>+971 {data.mobile || '—'}</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-col sm:flex-row gap-3 justify-center">
+        <a href="/dashboard"
+          className="flex items-center justify-center gap-2 h-12 px-8 rounded-xl font-sans font-bold text-[14px] text-white transition-all hover:opacity-90 hover:-translate-y-0.5"
+          style={{ background: 'linear-gradient(135deg,#0F2D55,#0D9488)' }}>
+          View My Dashboard <ArrowRight className="w-4 h-4" />
+        </a>
+        <a href="/quote/health"
+          className="flex items-center justify-center gap-2 h-12 px-8 rounded-xl font-sans font-semibold text-[14px] border transition-colors hover:bg-[#F4F7FB]"
+          style={{ borderColor: '#E5EAF0', color: '#475569' }}>
+          Get Another Quote
+        </a>
+      </div>
+    </motion.div>
   )
 }
 
 /* ─── Main Component ─────────────────────────────────────── */
 export default function HealthQuoteFlow() {
   const searchParams = useSearchParams()
-  const router = useRouter()
 
   const [step, setStep] = useState<StepId>('emirate')
   const [data, setData] = useState<QuoteData>({
@@ -1361,9 +1433,9 @@ export default function HealthQuoteFlow() {
               <PolicyholderStep data={data} set={set} goNext={goNext} goBack={goBack} />
             )}
 
-            {/* ══ PAYMENT ══ */}
+            {/* ══ SUCCESS ══ */}
             {step === 'payment' && selectedPlan && (
-              <PaymentStep data={data} plan={selectedPlan} premium={selectedPremium} goBack={goBack} router={router} />
+              <SuccessStep data={data} plan={selectedPlan} premium={selectedPremium} />
             )}
 
           </motion.div>
